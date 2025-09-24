@@ -8,6 +8,9 @@ const permsChecker = require("../core/utils/permisssionChecker")
 const embed = discord.EmbedBuilder
 const storage = bot.storage
 
+// Import component helper for role giver preservation
+const componentHelper = require('../core/interactionHandlers/buttons/componentHelper')
+
 const APIEvents = require("../core/api/modules/events")
 const DISABLE = require("../core/api/api.json").disable
 
@@ -50,11 +53,9 @@ module.exports = () => {
                 newEmbed.setFooter(null)
             }
 
-            if (firstmsg.components[0].components[1] && firstmsg.components[0].components[1].disabled){
-                firstmsg.edit({components:[bot.buttons.firstmsg.firstmsgRowDisabled],embeds:[newEmbed]})
-            }else{
-                firstmsg.edit({components:[bot.buttons.firstmsg.firstmsgRowNormal],embeds:[newEmbed]})
-            }
+            // Use enhanced components that preserve role giver buttons
+            const completeComponents = componentHelper.createEnhancedButtonRows(msg.channel.id)
+            firstmsg.edit({components: completeComponents, embeds:[newEmbed]})
 
             msg.channel.send({embeds:[bot.embeds.commands.unclaimEmbed(msg.author)]})
 
@@ -107,11 +108,9 @@ module.exports = () => {
                 newEmbed.setFooter(null)
             }
 
-            if (firstmsg.components[0].components[1] && firstmsg.components[0].components[1].disabled){
-                firstmsg.edit({components:[bot.buttons.firstmsg.firstmsgRowDisabled],embeds:[newEmbed]})
-            }else{
-                firstmsg.edit({components:[bot.buttons.firstmsg.firstmsgRowNormal],embeds:[newEmbed]})
-            }
+            // Use enhanced components that preserve role giver buttons
+            const completeComponents = componentHelper.createEnhancedButtonRows(interaction.channel.id)
+            firstmsg.edit({components: completeComponents, embeds:[newEmbed]})
 
             interaction.editReply({embeds:[bot.embeds.commands.unclaimEmbed(interaction.user)]})
 

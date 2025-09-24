@@ -11,6 +11,9 @@ const embed = discord.EmbedBuilder
 const mc = config.color
 const permsChecker = require("../../../utils/permisssionChecker")
 
+// Import component helper for role giver preservation
+const componentHelper = require('../../buttons/componentHelper')
+
 const button = discord.ButtonBuilder
 const arb = discord.ActionRowBuilder
 const bs = discord.ButtonStyle
@@ -48,11 +51,9 @@ module.exports = () => {
             const newEmbed = new embed(firstmsg.embeds[0].data)
                 .setFooter({text:"claimed by: "+interaction.user.username,iconURL:interaction.user.displayAvatarURL()})
 
-            if (firstmsg.components[0].components[1] && firstmsg.components[0].components[1].disabled){
-                firstmsg.edit({components:[bot.buttons.firstmsg.firstmsgRowDisabledNoClaim],embeds:[newEmbed]})
-            }else{
-                firstmsg.edit({components:[bot.buttons.firstmsg.firstmsgRowNormalNoClaim],embeds:[newEmbed]})
-            }
+            // Use enhanced components that preserve role giver buttons
+            const completeComponents = componentHelper.createEnhancedButtonRows(interaction.channel.id)
+            firstmsg.edit({components: completeComponents, embeds:[newEmbed]})
 
             interaction.channel.send({embeds:[bot.embeds.commands.claimEmbed(interaction.user,interaction.user)]})
         })

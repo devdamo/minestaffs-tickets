@@ -14,6 +14,9 @@ const button = discord.ButtonBuilder
 const arb = discord.ActionRowBuilder
 const bs = discord.ButtonStyle
 
+// Import component helper for role giver preservation
+const componentHelper = require('../buttons/componentHelper')
+
 module.exports = () => {
     //CLOSE
     client.on("interactionCreate",async interaction => {
@@ -35,12 +38,9 @@ module.exports = () => {
         } catch{}
 
         if (interaction.message.pinned && interaction.message.author.id == client.user.id){
-            const claimdata = storage.get("claimData",interaction.channel.id)
-            if (claimdata && claimdata != "false"){
-                interaction.message.edit({components:[bot.buttons.firstmsg.firstmsgRowNormalNoClaim]})
-            }else{
-                interaction.message.edit({components:[bot.buttons.firstmsg.firstmsgRowNormal]})
-            }
+            // Use enhanced components that preserve role giver buttons
+            const completeComponents = componentHelper.createEnhancedButtonRows(interaction.channel.id)
+            interaction.message.edit({components: completeComponents})
         }else{
             interaction.message.edit({components:[bot.buttons.close.openRowNormal]})
         }
@@ -66,12 +66,9 @@ module.exports = () => {
         } catch{}
         
         if (interaction.message.pinned && interaction.message.author.id == client.user.id){
-            const claimdata = storage.get("claimData",interaction.channel.id)
-            if (claimdata && claimdata != "false"){
-                interaction.message.edit({components:[bot.buttons.firstmsg.firstmsgRowNormalNoClaim]})
-            }else{
-                interaction.message.edit({components:[bot.buttons.firstmsg.firstmsgRowNormal]})
-            }
+            // Use enhanced components that preserve role giver buttons
+            const completeComponents = componentHelper.createEnhancedButtonRows(interaction.channel.id)
+            interaction.message.edit({components: completeComponents})
         }else{
             interaction.message.edit({components:[bot.buttons.close.openRowNormal]})
         }
