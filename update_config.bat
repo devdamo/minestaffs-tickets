@@ -1,0 +1,1 @@
+copy config_with_logging_and_rolegivers.json config.json

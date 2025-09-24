@@ -1,0 +1,787 @@
+[
+	{
+		"category": "amountOfUserTickets",
+		"key": "253584434123636736",
+		"value": 1
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1278360785348722840",
+		"value": "253584434123636736"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1278360785348722840",
+		"value": "[{\"key\":\"type\",\"value\":\"member-verify\"},{\"key\":\"openerid\",\"value\":\"253584434123636736\"},{\"key\":\"createdms\",\"value\":1724855362189}]"
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "736760201192931400",
+		"value": 7
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1278373699829108882",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1278373699829108882",
+		"value": "[{\"key\":\"type\",\"value\":\"member-verify\"},{\"key\":\"openerid\",\"value\":\"736760201192931400\"},{\"key\":\"createdms\",\"value\":1724858441252}]"
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1278380059949924394",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1278380059949924394",
+		"value": "[{\"key\":\"type\",\"value\":\"member-verify\"},{\"key\":\"openerid\",\"value\":\"736760201192931400\"},{\"key\":\"createdms\",\"value\":1724859958099}]"
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1278381698828206212",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1278381698828206212",
+		"value": "[{\"key\":\"type\",\"value\":\"member-verify\"},{\"key\":\"openerid\",\"value\":\"736760201192931400\"},{\"key\":\"createdms\",\"value\":1724860348393}]"
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1278429076868304960",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1278429076868304960",
+		"value": "[{\"key\":\"type\",\"value\":\"member-verify\"},{\"key\":\"openerid\",\"value\":\"736760201192931400\"},{\"key\":\"createdms\",\"value\":1724871644323}]"
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "249637194233413643",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "307160933254299651",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "1156629760458379298",
+		"value": 3
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1279172878574686329",
+		"value": "1156629760458379298"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1279172878574686329",
+		"value": "[{\"key\":\"type\",\"value\":\"report-ticket\"},{\"key\":\"openerid\",\"value\":\"1156629760458379298\"},{\"key\":\"createdms\",\"value\":1725048980350}]"
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1279173561361109014",
+		"value": "1156629760458379298"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1279173561361109014",
+		"value": "[{\"key\":\"type\",\"value\":\"report-ticket\"},{\"key\":\"openerid\",\"value\":\"1156629760458379298\"},{\"key\":\"createdms\",\"value\":1725049143145}]"
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1279173579409330239",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1279173579409330239",
+		"value": "[{\"key\":\"type\",\"value\":\"report-ticket\"},{\"key\":\"openerid\",\"value\":\"736760201192931400\"},{\"key\":\"createdms\",\"value\":1725049147477}]"
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1279173615174160434",
+		"value": "1156629760458379298"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1279173615174160434",
+		"value": "[{\"key\":\"type\",\"value\":\"general-enquiry\"},{\"key\":\"openerid\",\"value\":\"1156629760458379298\"},{\"key\":\"createdms\",\"value\":1725049155918}]"
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1279173689220403252",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1279173689220403252",
+		"value": "[{\"key\":\"type\",\"value\":\"report-ticket\"},{\"key\":\"openerid\",\"value\":\"736760201192931400\"},{\"key\":\"createdms\",\"value\":1725049173595}]"
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "797106747545485343",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "330358527988334604",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "816034668699844658",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "350774511345467392",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "288003572673806337",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "455079966774788109",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "556886090187931648",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "360819369468755978",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "755179980744294530",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "215911168471072769",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "748278140752756797",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "309400933870206978",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "539493514417930262",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "547217854819467275",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "475083422172315660",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "313360170619109386",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "415213897772040192",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "1186297841539362849",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "382942258900631582",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "771380483334471690",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "816836266867294278",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "476785346747695124",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "589130644580335654",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "278173437623795713",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "414829504360611854",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "383594079109382154",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "225669897219342336",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "447779043610460161",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "570969427126779915",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "732543188467843083",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "446691178314727444",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "1087080206629613659",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "550342075430862869",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "380256340939112448",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "524125073947230213",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "678725134353301564",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "1005617050120617994",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "637308671809945630",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "363043683362144256",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "171633305010044928",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "704642887173931039",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "586974315006918661",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "370707852366446592",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "407284163272507393",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "420598814592860160",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "281927693682081802",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "536631548565389313",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "902622252363812875",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "563717046794452992",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "284732466617384962",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "873320832812843049",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "409731712491454475",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "961564624950550558",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "843932757603647568",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "692434038404677763",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "425759714853257217",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "654712057140215818",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "730049568120504381",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "691982458601603092",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "1160996998841901116",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "596633086733844481",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "323763435898667009",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "608742698425385006",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "403288479427198986",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "344215948229869569",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "362294612431208462",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "758327726486192131",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "1219913449862070325",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "600396102646235156",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "455813225502474251",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "637555455270453268",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "483609540890198026",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "863131149366460446",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "362286892915621900",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "756591428393631923",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "222740151703568385",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "346065723493318671",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "416651497216933918",
+		"value": 1
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "577236867850698807",
+		"value": 1
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "471726293495316491",
+		"value": 1
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1314641493331546172",
+		"value": "471726293495316491"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1314641493331546172",
+		"value": "[{\"key\":\"type\",\"value\":\"member-verify\"},{\"key\":\"openerid\",\"value\":\"471726293495316491\"},{\"key\":\"createdms\",\"value\":1733505357068},{\"key\":\"claimedby\",\"value\":\"736760201192931400\"}]"
+	},
+	{
+		"category": "claimData",
+		"key": "1314641493331546172",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "757883561188655105",
+		"value": 1
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1316120862709125271",
+		"value": "757883561188655105"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1316120862709125271",
+		"value": "[{\"key\":\"type\",\"value\":\"member-verify\"},{\"key\":\"openerid\",\"value\":\"757883561188655105\"},{\"key\":\"createdms\",\"value\":1733858066145},{\"key\":\"claimedby\",\"value\":\"736760201192931400\"}]"
+	},
+	{
+		"category": "claimData",
+		"key": "1316120862709125271",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "404681106693292032",
+		"value": 0
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "691971812057153608",
+		"value": 1
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1316871292426911765",
+		"value": "691971812057153608"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1316871292426911765",
+		"value": "[{\"key\":\"type\",\"value\":\"member-verify\"},{\"key\":\"openerid\",\"value\":\"691971812057153608\"},{\"key\":\"createdms\",\"value\":1734036982648},{\"key\":\"claimedby\",\"value\":\"736760201192931400\"}]"
+	},
+	{
+		"category": "claimData",
+		"key": "1316871292426911765",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1317184926562517143",
+		"value": "416651497216933918"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1317184926562517143",
+		"value": "[{\"key\":\"type\",\"value\":\"general-enquiry\"},{\"key\":\"openerid\",\"value\":\"416651497216933918\"},{\"key\":\"createdms\",\"value\":1734111758842}]"
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "630416104556068910",
+		"value": 1
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1321120812337598506",
+		"value": "630416104556068910"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1321120812337598506",
+		"value": "[{\"key\":\"type\",\"value\":\"member-verify\"},{\"key\":\"openerid\",\"value\":\"630416104556068910\"},{\"key\":\"createdms\",\"value\":1735050148359},{\"key\":\"claimedby\",\"value\":\"736760201192931400\"}]"
+	},
+	{
+		"category": "claimData",
+		"key": "1321120812337598506",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "761547516960309258",
+		"value": 4
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1325472392939831408",
+		"value": "761547516960309258"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1325472392939831408",
+		"value": "[{\"key\":\"type\",\"value\":\"member-verify\"},{\"key\":\"openerid\",\"value\":\"761547516960309258\"},{\"key\":\"createdms\",\"value\":1736087644741},{\"key\":\"claimedby\",\"value\":\"736760201192931400\"}]"
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1325474744396546182",
+		"value": "761547516960309258"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1325474744396546182",
+		"value": "[{\"key\":\"type\",\"value\":\"general-enquiry\"},{\"key\":\"openerid\",\"value\":\"761547516960309258\"},{\"key\":\"createdms\",\"value\":1736088205434},{\"key\":\"claimedby\",\"value\":\"736760201192931400\"}]"
+	},
+	{
+		"category": "claimData",
+		"key": "1325474744396546182",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1325483111097827348",
+		"value": "761547516960309258"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1325483111097827348",
+		"value": "[{\"key\":\"type\",\"value\":\"member-verify\"},{\"key\":\"openerid\",\"value\":\"761547516960309258\"},{\"key\":\"createdms\",\"value\":1736090200128}]"
+	},
+	{
+		"category": "claimData",
+		"key": "1325472392939831408",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1325527327861510144",
+		"value": "761547516960309258"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1325527327861510144",
+		"value": "[{\"key\":\"type\",\"value\":\"general-enquiry\"},{\"key\":\"openerid\",\"value\":\"761547516960309258\"},{\"key\":\"createdms\",\"value\":1736100742275},{\"key\":\"claimedby\",\"value\":\"736760201192931400\"}]"
+	},
+	{
+		"category": "claimData",
+		"key": "1325527327861510144",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1328072462407045252",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1328072462407045252",
+		"value": "[{\"key\":\"type\",\"value\":\"member-verify\"},{\"key\":\"openerid\",\"value\":\"736760201192931400\"},{\"key\":\"createdms\",\"value\":1736707549749}]"
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "1138724783845015672",
+		"value": 1
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1329101291779264543",
+		"value": "1138724783845015672"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1329101291779264543",
+		"value": "[{\"key\":\"type\",\"value\":\"member-verify\"},{\"key\":\"openerid\",\"value\":\"1138724783845015672\"},{\"key\":\"createdms\",\"value\":1736952841759},{\"key\":\"claimedby\",\"value\":\"736760201192931400\"}]"
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "810063154532188190",
+		"value": 1
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1330653266219892837",
+		"value": "810063154532188190"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1330653266219892837",
+		"value": "[{\"key\":\"type\",\"value\":\"general-enquiry\"},{\"key\":\"openerid\",\"value\":\"810063154532188190\"},{\"key\":\"createdms\",\"value\":1737322861162},{\"key\":\"claimedby\",\"value\":\"816836266867294278\"}]"
+	},
+	{
+		"category": "claimData",
+		"key": "1330653266219892837",
+		"value": "816836266867294278"
+	},
+	{
+		"category": "claimData",
+		"key": "1329101291779264543",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1343249146617790585",
+		"value": "577236867850698807"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1343249146617790585",
+		"value": "[{\"key\":\"type\",\"value\":\"report-ticket\"},{\"key\":\"openerid\",\"value\":\"577236867850698807\"},{\"key\":\"createdms\",\"value\":1740325953052}]"
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "692811217387126814",
+		"value": 1
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1344494074287362089",
+		"value": "692811217387126814"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1344494074287362089",
+		"value": "[{\"key\":\"type\",\"value\":\"member-verify\"},{\"key\":\"openerid\",\"value\":\"692811217387126814\"},{\"key\":\"createdms\",\"value\":1740622767045},{\"key\":\"claimedby\",\"value\":\"736760201192931400\"}]"
+	},
+	{
+		"category": "claimData",
+		"key": "1344494074287362089",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "266245187456466944",
+		"value": 1
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1420016230173118566",
+		"value": "266245187456466944"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1420016230173118566",
+		"value": "[{\"key\":\"type\",\"value\":\"member-verify\"},{\"key\":\"openerid\",\"value\":\"266245187456466944\"},{\"key\":\"createdms\",\"value\":1758628652042}]"
+	},
+	{
+		"category": "amountOfUserTickets",
+		"key": "673202643904102404",
+		"value": 1
+	},
+	{
+		"category": "userFromChannel",
+		"key": "1420122045454483527",
+		"value": "673202643904102404"
+	},
+	{
+		"category": "HIDDENDATA",
+		"key": "1420122045454483527",
+		"value": "[{\"key\":\"type\",\"value\":\"member-verify\"},{\"key\":\"openerid\",\"value\":\"673202643904102404\"},{\"key\":\"createdms\",\"value\":1758653880382}]"
+	}
+]

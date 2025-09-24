@@ -1,0 +1,827 @@
+[
+	{
+		"category": "global",
+		"key": "TIME_SINCE_UPDATE",
+		"value": 1724807540840
+	},
+	{
+		"category": "global",
+		"key": "LAST_VERSION",
+		"value": "3.5.8"
+	},
+	{
+		"category": "global",
+		"key": "TICKETS_CREATED",
+		"value": 178
+	},
+	{
+		"category": "global",
+		"key": "TICKETS_CLOSED",
+		"value": 128
+	},
+	{
+		"category": "global",
+		"key": "TICKETS_DELETED",
+		"value": 157
+	},
+	{
+		"category": "global",
+		"key": "TICKETS_AUTOCLOSED",
+		"value": 0
+	},
+	{
+		"category": "global",
+		"key": "TICKETS_REOPENED",
+		"value": 2
+	},
+	{
+		"category": "global",
+		"key": "TRANSCRIPTS_CREATED",
+		"value": 151
+	},
+	{
+		"category": "user253584434123636736",
+		"key": "TICKETS_CREATED",
+		"value": 10
+	},
+	{
+		"category": "user253584434123636736",
+		"key": "TICKETS_DELETED",
+		"value": 72
+	},
+	{
+		"category": "ticket1278360785348722840",
+		"key": "CREATED_BY",
+		"value": "253584434123636736"
+	},
+	{
+		"category": "ticket1278360785348722840",
+		"key": "CREATED_AT",
+		"value": 1724855362196
+	},
+	{
+		"category": "ticket1278360785348722840",
+		"key": "STATUS",
+		"value": "open"
+	},
+	{
+		"category": "user736760201192931400",
+		"key": "TICKETS_CREATED",
+		"value": 28
+	},
+	{
+		"category": "user736760201192931400",
+		"key": "TICKETS_DELETED",
+		"value": 68
+	},
+	{
+		"category": "ticket1278373699829108882",
+		"key": "CREATED_BY",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "ticket1278373699829108882",
+		"key": "CREATED_AT",
+		"value": 1724858441263
+	},
+	{
+		"category": "ticket1278373699829108882",
+		"key": "STATUS",
+		"value": "open"
+	},
+	{
+		"category": "ticket1278380059949924394",
+		"key": "CREATED_BY",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "ticket1278380059949924394",
+		"key": "CREATED_AT",
+		"value": 1724859958110
+	},
+	{
+		"category": "ticket1278380059949924394",
+		"key": "STATUS",
+		"value": "open"
+	},
+	{
+		"category": "ticket1278381698828206212",
+		"key": "CREATED_BY",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "ticket1278381698828206212",
+		"key": "CREATED_AT",
+		"value": 1724860348402
+	},
+	{
+		"category": "ticket1278381698828206212",
+		"key": "STATUS",
+		"value": "open"
+	},
+	{
+		"category": "user253584434123636736",
+		"key": "TICKETS_CLOSED",
+		"value": 17
+	},
+	{
+		"category": "user736760201192931400",
+		"key": "TICKETS_CLOSED",
+		"value": 87
+	},
+	{
+		"category": "ticket1278429076868304960",
+		"key": "CREATED_BY",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "ticket1278429076868304960",
+		"key": "CREATED_AT",
+		"value": 1724871644331
+	},
+	{
+		"category": "ticket1278429076868304960",
+		"key": "STATUS",
+		"value": "open"
+	},
+	{
+		"category": "user249637194233413643",
+		"key": "TICKETS_CREATED",
+		"value": 5
+	},
+	{
+		"category": "user249637194233413643",
+		"key": "TICKETS_CLOSED",
+		"value": 10
+	},
+	{
+		"category": "user249637194233413643",
+		"key": "TICKETS_DELETED",
+		"value": 11
+	},
+	{
+		"category": "user307160933254299651",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "user1156629760458379298",
+		"key": "TICKETS_CREATED",
+		"value": 5
+	},
+	{
+		"category": "user1156629760458379298",
+		"key": "TICKETS_DELETED",
+		"value": 4
+	},
+	{
+		"category": "user1156629760458379298",
+		"key": "TICKETS_CLOSED",
+		"value": 6
+	},
+	{
+		"category": "user797106747545485343",
+		"key": "TICKETS_CREATED",
+		"value": 3
+	},
+	{
+		"category": "user330358527988334604",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user288003572673806337",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "user455079966774788109",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user556886090187931648",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user360819369468755978",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "user755179980744294530",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user215911168471072769",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user309400933870206978",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "user547217854819467275",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user475083422172315660",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user415213897772040192",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "user1186297841539362849",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "user382942258900631582",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "user771380483334471690",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "user816836266867294278",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user816836266867294278",
+		"key": "TICKETS_DELETED",
+		"value": 2
+	},
+	{
+		"category": "user476785346747695124",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "user816836266867294278",
+		"key": "TICKETS_CLOSED",
+		"value": 6
+	},
+	{
+		"category": "user278173437623795713",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user414829504360611854",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "user383594079109382154",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user736760201192931400",
+		"key": "TICKETS_REOPENED",
+		"value": 1
+	},
+	{
+		"category": "user225669897219342336",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user570969427126779915",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user732543188467843083",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "user446691178314727444",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user1087080206629613659",
+		"key": "TICKETS_CREATED",
+		"value": 4
+	},
+	{
+		"category": "user550342075430862869",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "user380256340939112448",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user524125073947230213",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user678725134353301564",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user1005617050120617994",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user637308671809945630",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user363043683362144256",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user171633305010044928",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user704642887173931039",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user586974315006918661",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user370707852366446592",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user407284163272507393",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "user420598814592860160",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user902622252363812875",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user563717046794452992",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user873320832812843049",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user409731712491454475",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user961564624950550558",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user843932757603647568",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "user692434038404677763",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user425759714853257217",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user654712057140215818",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user730049568120504381",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "user691982458601603092",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user1160996998841901116",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user596633086733844481",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user323763435898667009",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user608742698425385006",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "user403288479427198986",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user344215948229869569",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user362294612431208462",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user758327726486192131",
+		"key": "TICKETS_CREATED",
+		"value": 4
+	},
+	{
+		"category": "user1219913449862070325",
+		"key": "TICKETS_CREATED",
+		"value": 3
+	},
+	{
+		"category": "user600396102646235156",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user637555455270453268",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user483609540890198026",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user863131149366460446",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user253584434123636736",
+		"key": "TICKETS_REOPENED",
+		"value": 1
+	},
+	{
+		"category": "user362286892915621900",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user222740151703568385",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "user346065723493318671",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "user416651497216933918",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "user577236867850698807",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "ticket1314641493331546172",
+		"key": "CREATED_BY",
+		"value": "471726293495316491"
+	},
+	{
+		"category": "ticket1314641493331546172",
+		"key": "CREATED_AT",
+		"value": 1733505357092
+	},
+	{
+		"category": "ticket1314641493331546172",
+		"key": "STATUS",
+		"value": "closed"
+	},
+	{
+		"category": "user757883561188655105",
+		"key": "TICKETS_CREATED",
+		"value": 2
+	},
+	{
+		"category": "ticket1316120862709125271",
+		"key": "CREATED_BY",
+		"value": "757883561188655105"
+	},
+	{
+		"category": "ticket1316120862709125271",
+		"key": "CREATED_AT",
+		"value": 1733858066168
+	},
+	{
+		"category": "ticket1316120862709125271",
+		"key": "STATUS",
+		"value": "closed"
+	},
+	{
+		"category": "user691971812057153608",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "ticket1316871292426911765",
+		"key": "CREATED_BY",
+		"value": "691971812057153608"
+	},
+	{
+		"category": "ticket1316871292426911765",
+		"key": "CREATED_AT",
+		"value": 1734036982673
+	},
+	{
+		"category": "ticket1316871292426911765",
+		"key": "STATUS",
+		"value": "closed"
+	},
+	{
+		"category": "ticket1317184926562517143",
+		"key": "CREATED_BY",
+		"value": "416651497216933918"
+	},
+	{
+		"category": "ticket1317184926562517143",
+		"key": "CREATED_AT",
+		"value": 1734111758866
+	},
+	{
+		"category": "ticket1317184926562517143",
+		"key": "STATUS",
+		"value": "closed"
+	},
+	{
+		"category": "user630416104556068910",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "ticket1321120812337598506",
+		"key": "CREATED_BY",
+		"value": "630416104556068910"
+	},
+	{
+		"category": "ticket1321120812337598506",
+		"key": "CREATED_AT",
+		"value": 1735050148409
+	},
+	{
+		"category": "ticket1321120812337598506",
+		"key": "STATUS",
+		"value": "closed"
+	},
+	{
+		"category": "user761547516960309258",
+		"key": "TICKETS_CREATED",
+		"value": 4
+	},
+	{
+		"category": "ticket1325472392939831408",
+		"key": "CREATED_BY",
+		"value": "761547516960309258"
+	},
+	{
+		"category": "ticket1325472392939831408",
+		"key": "CREATED_AT",
+		"value": 1736087644775
+	},
+	{
+		"category": "ticket1325472392939831408",
+		"key": "STATUS",
+		"value": "closed"
+	},
+	{
+		"category": "ticket1325474744396546182",
+		"key": "CREATED_BY",
+		"value": "761547516960309258"
+	},
+	{
+		"category": "ticket1325474744396546182",
+		"key": "CREATED_AT",
+		"value": 1736088205450
+	},
+	{
+		"category": "ticket1325474744396546182",
+		"key": "STATUS",
+		"value": "open"
+	},
+	{
+		"category": "ticket1325483111097827348",
+		"key": "CREATED_BY",
+		"value": "761547516960309258"
+	},
+	{
+		"category": "ticket1325483111097827348",
+		"key": "CREATED_AT",
+		"value": 1736090200144
+	},
+	{
+		"category": "ticket1325483111097827348",
+		"key": "STATUS",
+		"value": "closed"
+	},
+	{
+		"category": "ticket1325527327861510144",
+		"key": "CREATED_BY",
+		"value": "761547516960309258"
+	},
+	{
+		"category": "ticket1325527327861510144",
+		"key": "CREATED_AT",
+		"value": 1736100742326
+	},
+	{
+		"category": "ticket1325527327861510144",
+		"key": "STATUS",
+		"value": "open"
+	},
+	{
+		"category": "ticket1328072462407045252",
+		"key": "CREATED_BY",
+		"value": "736760201192931400"
+	},
+	{
+		"category": "ticket1328072462407045252",
+		"key": "CREATED_AT",
+		"value": 1736707549777
+	},
+	{
+		"category": "ticket1328072462407045252",
+		"key": "STATUS",
+		"value": "open"
+	},
+	{
+		"category": "user1138724783845015672",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "ticket1329101291779264543",
+		"key": "CREATED_BY",
+		"value": "1138724783845015672"
+	},
+	{
+		"category": "ticket1329101291779264543",
+		"key": "CREATED_AT",
+		"value": 1736952841787
+	},
+	{
+		"category": "ticket1329101291779264543",
+		"key": "STATUS",
+		"value": "open"
+	},
+	{
+		"category": "user810063154532188190",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "ticket1330653266219892837",
+		"key": "CREATED_BY",
+		"value": "810063154532188190"
+	},
+	{
+		"category": "ticket1330653266219892837",
+		"key": "CREATED_AT",
+		"value": 1737322861193
+	},
+	{
+		"category": "ticket1330653266219892837",
+		"key": "STATUS",
+		"value": "open"
+	},
+	{
+		"category": "ticket1343249146617790585",
+		"key": "CREATED_BY",
+		"value": "577236867850698807"
+	},
+	{
+		"category": "ticket1343249146617790585",
+		"key": "CREATED_AT",
+		"value": 1740325953076
+	},
+	{
+		"category": "ticket1343249146617790585",
+		"key": "STATUS",
+		"value": "open"
+	},
+	{
+		"category": "user692811217387126814",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "ticket1344494074287362089",
+		"key": "CREATED_BY",
+		"value": "692811217387126814"
+	},
+	{
+		"category": "ticket1344494074287362089",
+		"key": "CREATED_AT",
+		"value": 1740622767074
+	},
+	{
+		"category": "ticket1344494074287362089",
+		"key": "STATUS",
+		"value": "open"
+	},
+	{
+		"category": "user266245187456466944",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "ticket1420016230173118566",
+		"key": "CREATED_BY",
+		"value": "266245187456466944"
+	},
+	{
+		"category": "ticket1420016230173118566",
+		"key": "CREATED_AT",
+		"value": 1758628652066
+	},
+	{
+		"category": "ticket1420016230173118566",
+		"key": "STATUS",
+		"value": "closed"
+	},
+	{
+		"category": "user673202643904102404",
+		"key": "TICKETS_CREATED",
+		"value": 1
+	},
+	{
+		"category": "ticket1420122045454483527",
+		"key": "CREATED_BY",
+		"value": "673202643904102404"
+	},
+	{
+		"category": "ticket1420122045454483527",
+		"key": "CREATED_AT",
+		"value": 1758653880403
+	},
+	{
+		"category": "ticket1420122045454483527",
+		"key": "STATUS",
+		"value": "closed"
+	},
+	{
+		"category": "user476785346747695124",
+		"key": "TICKETS_CLOSED",
+		"value": 2
+	}
+]
