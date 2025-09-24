@@ -4954,3 +4954,44 @@ DEBUG: [WS => Shard 0] Heartbeat acknowledged, latency of 94ms.
 DEBUG: [WS => Shard 0] Heartbeat acknowledged, latency of 99ms.
 DEBUG: [WS => Shard 0] Heartbeat acknowledged, latency of 94ms.
 DEBUG: [WS => Shard 0] Heartbeat acknowledged, latency of 101ms.
+DEBUG: Provided token: ***********bot token is invisible**************...
+DEBUG: Preparing to connect to the gateway...
+DEBUG: [WS => Manager] Fetched Gateway Information
+    URL: wss://gateway.discord.gg
+    Recommended Shards: 1
+DEBUG: [WS => Manager] Session Limit Information
+    Total: 1000
+    Remaining: 997
+DEBUG: [WS => Shard 0] Connecting to wss://gateway.discord.gg?v=10&encoding=json
+DEBUG: [WS => Shard 0] Waiting for event hello for 60000ms
+DEBUG: [WS => Shard 0] Preparing first heartbeat of the connection with a jitter of 0.00679645423710018; waiting 280ms
+DEBUG: [WS => Shard 0] Waiting for identify throttle
+DEBUG: [WS => Shard 0] Identifying
+	shard id: 0
+	shard count: 1
+	intents: 37443
+	compression: none
+DEBUG: [WS => Shard 0] Waiting for event ready for 15000ms
+DEBUG: [WS => Shard 0] Shard received all its guilds. Marking as fully ready.
+DEBUG: [WS => Shard 0] First heartbeat sent, starting to beat every 41250ms
+DEBUG: [WS => Shard 0] Heartbeat acknowledged, latency of 151ms.
+DEBUG: [WS => Shard 0] Heartbeat acknowledged, latency of 99ms.
+DEBUG: [WS => Shard 0] Heartbeat acknowledged, latency of 118ms.
+DEBUG: [WS => Shard 0] Heartbeat acknowledged, latency of 105ms.
+DEBUG: [WS => Shard 0] Heartbeat acknowledged, latency of 102ms.
+SYSTEM: [24 August 2025 - 37:20:13] [system] created new ticket (ticket: verification-devdamo user: devdamo )
+SYSTEM: [24 August 2025 - 37:20:13] [api v1.0.0] new ticket created (userid: 253584434123636736 channelid: 1420384427514794085 guildid: 1230232737210826842 ticketdata: {"name":"verification-devdamo","status":"open","ticketOptions":{"id":"member-verify","name":"Verify Your Membership","description":"Create this ticket to begin verifying your membership!","icon":"🟩","label":"Verify your MineStaffs Membership","type":"ticket","color":"gray","adminroles":["1230248717316128778","1230233825683050649"],"readonlyAdminroles":[""],"channelprefix":"verification-","category":"1230261219135324282","message":"You created a ticket!","enableDmOnOpen":false,"ticketmessage":"**We need a few things before we can verify your MineStaffs purchase!**\n- Please ensure you have purchased the membership on the Student Union website!\n- Send us your details in this format:\n    Full Name : (first name) (last name)\n    Minecraft Username : (Minecraft Username)\n- Make sure you have logged onto MineStaffs Minecraft Server at least once (ip : minestaffs.online)! We can't give you the rank without it.","roleGivers":[{"id":"approve_membership","name":"✅ Approve Membership","color":"green","roleId":"1230238352326791320","emoji":"✅","disableAfterUse":true}],"thumbnail":{"enable":false,"url":"https://www.example.com/catmemes/cat.png"},"image":{"enable":true,"url":"https://images-ext-1.discordapp.net/external/p27cL20ATnd7Chq7HKdoyp2D_SmilKMkR4ODahQt3Dw/https/image.overtimehosting.cloud/u/POd9Bs.png?format=webp&quality=lossless&width=810&height=236"},"closedCategory":{"enable":true,"id":"1278168218376339557"},"autoclose":{"enable":false,"inactiveHours":24},"ping":{"@here":true,"@everyone":false,"custom":{"enable":false,"roleId":"012345678910"}}}} )
+ERROR: DiscordAPIError[40060]: Interaction has already been acknowledged. | origin: unhandledRejection STACK: DiscordAPIError[40060]: Interaction has already been acknowledged.
+    at handleErrors (C:\Users\Minec\Documents\Minestaffs-tickets\minestaffs-tickets\node_modules\@discordjs\rest\dist\index.js:730:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async BurstHandler.runRequest (C:\Users\Minec\Documents\Minestaffs-tickets\minestaffs-tickets\node_modules\@discordjs\rest\dist\index.js:835:23)
+    at async _REST.request (C:\Users\Minec\Documents\Minestaffs-tickets\minestaffs-tickets\node_modules\@discordjs\rest\dist\index.js:1278:22)
+    at async ButtonInteraction.reply (C:\Users\Minec\Documents\Minestaffs-tickets\minestaffs-tickets\node_modules\discord.js\src\structures\interfaces\InteractionResponses.js:114:5)
+SYSTEM: [24 August 2025 - 37:20:13] [api v1.0.0] there is an error (error: DiscordAPIError[40060]: Interaction has already been acknowledged. )
+DEBUG: [WS => Shard 0] Heartbeat acknowledged, latency of 101ms.
+ERROR: Error [InteractionNotReplied]: The reply to this interaction has not been sent or deferred. | origin: uncaughtException STACK: Error [InteractionNotReplied]: The reply to this interaction has not been sent or deferred.
+    at ButtonInteraction.editReply (C:\Users\Minec\Documents\Minestaffs-tickets\minestaffs-tickets\node_modules\discord.js\src\structures\interfaces\InteractionResponses.js:160:48)
+    at Object.handleRoleGiverInteraction (C:\Users\Minec\Documents\Minestaffs-tickets\minestaffs-tickets\core\interactionHandlers\buttons\roleGiver.js:187:27)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Client.<anonymous> (C:\Users\Minec\Documents\Minestaffs-tickets\minestaffs-tickets\core\interactionHandlers\handlers\roleGiver.js:11:25)
+SYSTEM: [24 August 2025 - 58:20:13] [api v1.0.0] there is an error (error: Error [InteractionNotReplied]: The reply to this interaction has not been sent or deferred. )

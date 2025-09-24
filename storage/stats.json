@@ -12,7 +12,7 @@
 	{
 		"category": "global",
 		"key": "TICKETS_CREATED",
-		"value": 178
+		"value": 179
 	},
 	{
 		"category": "global",
@@ -42,7 +42,7 @@
 	{
 		"category": "user253584434123636736",
 		"key": "TICKETS_CREATED",
-		"value": 10
+		"value": 11
 	},
 	{
 		"category": "user253584434123636736",
@@ -823,5 +823,20 @@
 		"category": "user476785346747695124",
 		"key": "TICKETS_CLOSED",
 		"value": 2
+	},
+	{
+		"category": "ticket1420384427514794085",
+		"key": "CREATED_BY",
+		"value": "253584434123636736"
+	},
+	{
+		"category": "ticket1420384427514794085",
+		"key": "CREATED_AT",
+		"value": 1758716437103
+	},
+	{
+		"category": "ticket1420384427514794085",
+		"key": "STATUS",
+		"value": "open"
 	}
 ]
