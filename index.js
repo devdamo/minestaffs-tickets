@@ -381,7 +381,38 @@ client.on('interactionCreate', async (interaction) => {
         const existing = db.prepare('SELECT channel_id FROM active_tickets WHERE guild_id = ? AND user_id = ?').get(guild.id, interaction.user.id);
         
         if (existing) {
-            return interaction.reply({ content: `❌ You already have an active ticket: <#${existing.channel_id}>`, flags: MessageFlags.Ephemeral });
+            // Verify the channel actually exists
+            const channelExists = await guild.channels.fetch(existing.channel_id).catch(() => null);
+            
+            if (channelExists) {
+                // Channel exists, deny
+                return interaction.reply({ content: `❌ You already have an active ticket: <#${existing.channel_id}>`, flags: MessageFlags.Ephemeral });
+            } else {
+                // Channel was deleted but database still has it, clean it up
+                db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(existing.channel_id);
+                console.log(`Cleaned up orphaned ticket record for user ${interaction.user.id}`);
+            }
+        }
+        
+        // Check how many tickets this user has opened for this category
+        const userCategoryTickets = db.prepare('SELECT channel_id FROM active_tickets WHERE guild_id = ? AND user_id = ? AND category = ?').all(guild.id, interaction.user.id, category);
+        
+        // Verify each ticket channel exists and clean up orphaned records
+        let validTicketCount = 0;
+        for (const ticket of userCategoryTickets) {
+            const channelExists = await guild.channels.fetch(ticket.channel_id).catch(() => null);
+            if (channelExists) {
+                validTicketCount++;
+            } else {
+                // Clean up orphaned record
+                db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(ticket.channel_id);
+                console.log(`Cleaned up orphaned ticket record for channel ${ticket.channel_id}`);
+            }
+        }
+        
+        // Check if user has reached limit for this category
+        if (validTicketCount >= 4) {
+            return interaction.reply({ content: `❌ You have reached the maximum of 4 tickets for **${category}**. Please close some tickets before opening more.`, flags: MessageFlags.Ephemeral });
         }
         
         // Get roles for category (only used for approval, NOT for permissions)

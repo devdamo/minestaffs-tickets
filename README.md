@@ -5,15 +5,40 @@ A feature-rich Discord ticket bot with approval system, categories, and admin co
 ## ✨ Features
 
 - 🎯 **Dropdown ticket panels** - Easy ticket selection
-- 🔐 **Role-based permissions** - Add staff roles to ticket categories
+- 🔐 **Private tickets** - Only ticket owner and admins can see
 - 📩 **DM alerts** - Get notified when tickets are opened
 - 🎨 **Clean white embeds** - Professional look with custom branding
 - 🔒 **User-friendly closing** - `/ticket close` command for everyone
 - 🎛️ **Admin ticket menu** - Review and approve/deny tickets
 - 📁 **Auto categories** - "Open Tickets" and "Closed Tickets"
-- ✅ **Approval system** - Approve or deny tickets with role requirements
+- ✅ **Approval system** - Approve or deny tickets with role rewards
 - 🚫 **Duplicate prevention** - One ticket per user at a time
+- 🔢 **Smart limits** - Max 4 tickets per category type per user
+- 🧹 **Auto cleanup** - Removes orphaned database records if channels deleted
 - 💾 **SQLite database** - Persistent data storage
+- 🔒 **Privacy protection** - Roles are for rewards only, not viewing access
+
+## 🔒 Privacy & Permissions
+
+**IMPORTANT**: When you create a ticket category with a role:
+- The role is ONLY used to give to users when approved
+- People with that role CANNOT see the tickets
+- Only ticket owner + admins can view tickets
+
+Example:
+```
+/ticket create title:Role Verification role:@Member
+
+When user opens ticket:
+✅ User can see it
+✅ Admins can see it
+❌ Existing @Members CANNOT see it
+
+When admin approves:
+✅ User gets @Member role
+```
+
+This prevents privacy issues with verification/application tickets.
 
 ## 🚀 Quick Start
 
@@ -33,7 +58,7 @@ npm start
 
 ### Administrator Only
 - `/ticket panel` - Create ticket panel with dropdown
-- `/ticket create` - Create ticket category (with optional role for approvals)
+- `/ticket create` - Create ticket category (role is for approval rewards, not viewing)
 - `/ticket list` - View all active tickets
 - `/ticket alerts` - Toggle DM notifications when tickets open
 - `/ticket menu` - Show ticket info and approve/deny buttons (in ticket channels)
@@ -46,27 +71,30 @@ npm start
 ### Basic Setup
 ```
 1. Create categories:
-   /ticket create title:Support role:@Staff
+   /ticket create title:Support
 
 2. Create panel:
    /ticket panel channel:#tickets title:Support description:Need help? Open a ticket!
 
 3. Users click dropdown and select ticket type
-4. Ticket opens in "Open Tickets" category
+4. Ticket opens in "Open Tickets" category (only user + admins see it)
 5. User or admin closes with /ticket close
 ```
 
-### Approval System
+### Approval System with Privacy
 ```
 1. Create approval category:
-   /ticket create title:Staff Application role:@Management
+   /ticket create title:Role Verification role:@Verified
 
-2. User opens "Staff Application" ticket
+2. User opens "Role Verification" ticket
+   - ONLY user and admins can see it
+   - Existing @Verified members CANNOT see it
+
 3. Admin goes to ticket and uses:
    /ticket menu
 
 4. Admin sees ticket info with Approve/Deny buttons
-5. Click Approve → User gets @Management role, success message shown
+5. Click Approve → User gets @Verified role automatically
    Click Deny → User gets DM, ticket closes
 ```
 
@@ -118,7 +146,8 @@ minestaffs-bot/
 ├── tickets.db        # SQLite database (auto-created)
 ├── .env              # Token (don't commit!)
 ├── .gitignore        # Git ignore rules
-└── CHANGELOG.md      # Update history
+├── nixpacks.toml     # Deployment config
+└── README.md         # This file
 ```
 
 ## 🛡️ DM Safety Features
@@ -158,6 +187,21 @@ Users don't need to enable DMs for the bot to work - they just won't receive not
 - Check console logs to see who has DMs disabled
 - Admins get notified when denial DMs fail
 - Users can enable DMs in: Server Settings → Privacy Settings → Allow direct messages
+
+**Privacy concerns?**
+- Roles in categories are for giving to users, not viewing access
+- Only ticket owner and admins can see tickets
+- Existing role holders cannot see verification tickets
+
+**Ticket limit reached?**
+- Users can have max 4 tickets per category type
+- Close some tickets before opening more in that category
+- Different categories have separate limits (4 Support + 4 Applications = 8 total OK)
+
+**Channel deleted but database still has ticket?**
+- Bot automatically cleans up orphaned records
+- User can create new tickets after cleanup
+- Check console logs for "Cleaned up orphaned ticket record" messages
 
 ## 🔐 Security
 
