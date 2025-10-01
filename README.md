@@ -57,10 +57,11 @@ npm start
 ## 📝 Commands
 
 ### Administrator Only
-- `/ticket panel` - Create ticket panel with dropdown
+- `/ticket panel` - Create ticket panel with specific categories
 - `/ticket create` - Create ticket category (role is for approval rewards, not viewing)
 - `/ticket list` - View all active tickets
 - `/ticket alerts` - Toggle DM notifications when tickets open
+- `/ticket categories` - List all available categories (useful before creating panels)
 - `/ticket menu` - Show ticket info and approve/deny buttons (in ticket channels)
 
 ### Everyone Can Use
@@ -72,13 +73,21 @@ npm start
 ```
 1. Create categories:
    /ticket create title:Support
+   /ticket create title:Bug Report
+   /ticket create title:Applications role:@Staff
 
-2. Create panel:
-   /ticket panel channel:#tickets title:Support description:Need help? Open a ticket!
+2. Check available categories:
+   /ticket categories
 
-3. Users click dropdown and select ticket type
-4. Ticket opens in "Open Tickets" category (only user + admins see it)
-5. User or admin closes with /ticket close
+3. Create panel with specific categories:
+   /ticket panel channel:#tickets title:Support categories:Support,Bug Report
+   
+4. Create another panel with different categories:
+   /ticket panel channel:#applications title:Apply categories:Applications
+
+5. Users click dropdown and select from available options
+6. Ticket opens in "Open Tickets" category (only user + admins see it)
+7. User or admin closes with /ticket close
 ```
 
 ### Approval System with Privacy

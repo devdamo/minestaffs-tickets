@@ -80,6 +80,12 @@ client.once('clientReady', async () => {
                             description: 'Panel description',
                             type: 3,
                             required: true
+                        },
+                        {
+                            name: 'categories',
+                            description: 'Categories to include (comma separated, e.g: Support,Bug Report,Applications)',
+                            type: 3,
+                            required: true
                         }
                     ]
                 },
@@ -112,6 +118,12 @@ client.once('clientReady', async () => {
                 {
                     name: 'alerts',
                     description: 'Toggle DM notifications for new tickets',
+                    type: 1,
+                    default_member_permissions: '8' // Administrator
+                },
+                {
+                    name: 'categories',
+                    description: 'List all available ticket categories',
                     type: 1,
                     default_member_permissions: '8' // Administrator
                 },
@@ -160,15 +172,49 @@ client.on('interactionCreate', async (interaction) => {
                 const channelOption = options.getChannel('channel');
                 const title = options.getString('title');
                 const description = options.getString('description');
+                const categoriesInput = options.getString('categories');
+                
+                // Parse categories from comma-separated input
+                const requestedCategories = categoriesInput.split(',').map(c => c.trim()).filter(c => c.length > 0);
+                
+                if (requestedCategories.length === 0) {
+                    return interaction.reply({ content: '❌ Please provide at least one category!', flags: MessageFlags.Ephemeral });
+                }
                 
                 // Fetch the actual channel object from the guild
                 const channel = await guild.channels.fetch(channelOption.id);
                 
-                // Get categories
-                const categories = db.prepare('SELECT name FROM ticket_categories WHERE guild_id = ?').all(guild.id);
+                // Get all available categories
+                const allCategories = db.prepare('SELECT name FROM ticket_categories WHERE guild_id = ?').all(guild.id);
+                const availableCategoryNames = allCategories.map(c => c.name);
                 
-                if (categories.length === 0) {
+                if (allCategories.length === 0) {
                     return interaction.reply({ content: '❌ No ticket categories found! Create some with `/ticket create` first.', flags: MessageFlags.Ephemeral });
+                }
+                
+                // Validate that requested categories exist
+                const validCategories = [];
+                const invalidCategories = [];
+                
+                for (const reqCat of requestedCategories) {
+                    if (availableCategoryNames.includes(reqCat)) {
+                        validCategories.push(reqCat);
+                    } else {
+                        invalidCategories.push(reqCat);
+                    }
+                }
+                
+                if (validCategories.length === 0) {
+                    return interaction.reply({ 
+                        content: `❌ None of the specified categories exist!\n\nAvailable categories: ${availableCategoryNames.join(', ')}`, 
+                        flags: MessageFlags.Ephemeral 
+                    });
+                }
+                
+                // Warn about invalid categories but continue with valid ones
+                let warningMessage = '';
+                if (invalidCategories.length > 0) {
+                    warningMessage = `\n⚠️ Note: These categories don't exist and were skipped: ${invalidCategories.join(', ')}`;
                 }
                 
                 // Create embed
@@ -178,14 +224,14 @@ client.on('interactionCreate', async (interaction) => {
                     .setColor(0xFFFFFF)
                     .setFooter({ text: 'Managed by overtimehosting' });
                 
-                // Create dropdown
+                // Create dropdown with only the valid categories
                 const selectMenu = new StringSelectMenuBuilder()
                     .setCustomId('ticket_dropdown')
                     .setPlaceholder('Select a ticket type...')
                     .addOptions(
-                        categories.map(cat => ({
-                            label: cat.name,
-                            value: cat.name
+                        validCategories.map(catName => ({
+                            label: catName,
+                            value: catName
                         }))
                     );
                 
@@ -193,17 +239,18 @@ client.on('interactionCreate', async (interaction) => {
                 
                 const panelMsg = await channel.send({ embeds: [embed], components: [row] });
                 
-                // Save panel
+                // Save panel with its specific categories
                 db.prepare('INSERT INTO ticket_panels VALUES (?, ?, ?, ?, ?, ?)').run(
                     guild.id,
                     channel.id,
                     panelMsg.id,
                     title,
                     description,
-                    JSON.stringify(categories.map(c => c.name))
+                    JSON.stringify(validCategories)
                 );
                 
-                await interaction.reply({ content: `✅ Ticket panel created in ${channel}!`, flags: MessageFlags.Ephemeral });
+                const successMsg = `✅ Ticket panel created in ${channel}!\n🏷️ Categories: ${validCategories.join(', ')}${warningMessage}`;
+                await interaction.reply({ content: successMsg, flags: MessageFlags.Ephemeral });
             }
             
             else if (subcommand === 'create') {
@@ -259,6 +306,47 @@ client.on('interactionCreate', async (interaction) => {
                     db.prepare('INSERT INTO ticket_alerts VALUES (?, ?)').run(guild.id, interaction.user.id);
                     await interaction.reply({ content: '🔔 Ticket alerts **enabled**! You\'ll receive DMs when tickets are opened.', flags: MessageFlags.Ephemeral });
                 }
+            }
+            
+            else if (subcommand === 'categories') {
+                const categories = db.prepare('SELECT name, roles FROM ticket_categories WHERE guild_id = ?').all(guild.id);
+                
+                if (categories.length === 0) {
+                    return interaction.reply({ content: '📋 No ticket categories found! Create some with `/ticket create` first.', flags: MessageFlags.Ephemeral });
+                }
+                
+                const embed = new EmbedBuilder()
+                    .setTitle('🏷️ Available Ticket Categories')
+                    .setDescription(`Total: ${categories.length} categor${categories.length === 1 ? 'y' : 'ies'}\n\n**Use these names when creating panels:**`)
+                    .setColor(0xFFFFFF)
+                    .setFooter({ text: 'Managed by overtimehosting' });
+                
+                for (const cat of categories) {
+                    const roleIds = JSON.parse(cat.roles);
+                    let roleText = 'No role (support ticket)';
+                    
+                    if (roleIds.length > 0) {
+                        const roles = roleIds.map(id => {
+                            const role = guild.roles.cache.get(id);
+                            return role ? role.name : 'Unknown Role';
+                        });
+                        roleText = `Role given on approval: ${roles.join(', ')}`;
+                    }
+                    
+                    embed.addFields({
+                        name: `\`${cat.name}\``,
+                        value: roleText,
+                        inline: false
+                    });
+                }
+                
+                embed.addFields({
+                    name: '💡 Example Usage',
+                    value: '`/ticket panel channel:#tickets title:Support categories:' + categories.slice(0, 2).map(c => c.name).join(',') + '`',
+                    inline: false
+                });
+                
+                await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             }
             
             else if (subcommand === 'close') {
