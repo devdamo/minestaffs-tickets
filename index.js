@@ -384,11 +384,11 @@ client.on('interactionCreate', async (interaction) => {
             return interaction.reply({ content: `❌ You already have an active ticket: <#${existing.channel_id}>`, flags: MessageFlags.Ephemeral });
         }
         
-        // Get roles for category
+        // Get roles for category (only used for approval, NOT for permissions)
         const catData = db.prepare('SELECT roles FROM ticket_categories WHERE guild_id = ? AND name = ?').get(guild.id, category);
         const roleIds = catData ? JSON.parse(catData.roles) : [];
         
-        // Create permissions
+        // Create permissions - ONLY user, bot, and admins can see
         const permissionOverwrites = [
             {
                 id: guild.id,
@@ -404,13 +404,16 @@ client.on('interactionCreate', async (interaction) => {
             }
         ];
         
-        // Add roles
-        for (const roleId of roleIds) {
-            permissionOverwrites.push({
-                id: roleId,
-                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
-            });
-        }
+        // Add admin roles (not the category role!)
+        // Find roles with Administrator permission
+        guild.roles.cache.forEach(role => {
+            if (role.permissions.has(PermissionFlagsBits.Administrator)) {
+                permissionOverwrites.push({
+                    id: role.id,
+                    allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
+                });
+            }
+        });
         
         // Find or create Open Tickets category
         let openCategory = guild.channels.cache.find(c => c.name === 'Open Tickets' && c.type === ChannelType.GuildCategory);
