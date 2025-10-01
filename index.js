@@ -1,44 +1,3 @@
-/**
-   ____  _____  ______ _   _     _______ _____ _____ _  ________ _______ 
-  / __ \|  __ \|  ____| \ | |   |__   __|_   _/ ____| |/ /  ____|__   __|
- | |  | | |__) | |__  |  \| |      | |    | || |    | ' /| |__     | |   
- | |  | |  ___/|  __| | . ` |      | |    | || |    |  < |  __|    | |   
- | |__| | |    | |____| |\  |      | |   _| || |____| . \| |____   | |   
-  \____/|_|    |______|_| \_|      |_|  |_____\_____|_|\_\______|  |_|   
-                                                                       
-                      Hey! we are looking for you!
-    Do you speak a language that isn't yet in our /languages directory
-        or do you speak one that isn't up-to-date? Open Ticket needs
-            translators for lots of different languages!
-  Feel free to join our translator team and help us improve Open Ticket!
-
-
-
-    
-    SUGGESTING NEW FEATURES:
-    =====================
-    Open Ticket is an open-source community project!
-    Because of this, almost 80% of all features in OT were ideas from our community!
-    Feel free to add new ideas in our discord server
-    or via github issues! Translations are always welcome!
-
-
-    INFORMATION:
-    ============
-    Open Ticket v3.5.8  -  © DJdj Development
-
-    discord: https://discord.dj-dj.be
-    website: https://www.dj-dj.be
-    github: https://otgithub.dj-dj.be
-    support e-mail: support@dj-dj.be
-
-    Config files:
-    ./config.json
-    ./transcriptconfig.json
-
-    Send ./openticketdebug.txt when there are errors!
- */
-/** discord :)*/
 const discord = require("discord.js")
 const fs = require('fs')
 const {GatewayIntentBits,Partials} = discord
@@ -57,18 +16,35 @@ exports.client = client
 client.setMaxListeners(120)
 if (process.argv.some((v) => v == "--debug")) console.log("[TEMP_DEBUG]","created client")
 
-//LOAD CONFIG
-var tempconfig = require("./config.json")
+//LOAD CONFIG WITH ENV VARIABLES
+const path = require('path')
+const envLoader = require('./core/config/envLoader')
+
 /**@type {Boolean} */
 var isDevConfig = false
+var tempconfig
 
 if (process.argv.some((v) => v == "--devconfig")){
     isDevConfig = true
     try{
-    tempconfig = require("./devconfig.json")
-    }catch{tempconfig = require("./config.json")}
+        // Load dev config with env variables
+        tempconfig = envLoader.loadConfig(
+            path.join(__dirname, 'devconfig.json'),
+            path.join(__dirname, '.env')
+        )
+    }catch{
+        // Fallback to regular config with env variables
+        tempconfig = envLoader.loadConfig(
+            path.join(__dirname, 'config.json'),
+            path.join(__dirname, '.env')
+        )
+    }
 }else{
-    tempconfig = require("./config.json")
+    // Load regular config with env variables
+    tempconfig = envLoader.loadConfig(
+        path.join(__dirname, 'config.json'),
+        path.join(__dirname, '.env')
+    )
 }
 if (process.argv.some((v) => v == "--debug")) console.log("[TEMP_DEBUG]","loaded flags")
 

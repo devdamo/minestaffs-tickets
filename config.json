@@ -1,14 +1,15 @@
 {
     "_DOCUMENTATION":"https://overtimehosting.com/",
     "_SUPPORT":"https://overtimehosting.com/",
+    "_NOTE":"All sensitive IDs have been moved to .env file. This config uses ENV_ placeholders that will be replaced at runtime.",
     
     "color":"#ffffff",
-    "serverId":"1230232737210826842",
+    "serverId":"ENV_SERVER_ID",
     "token":{
-        "value":"MTI3ODE1NzM0MTE1Nzc1Njk0OA.GU_shC.il3uwI0zkVGMsV7wFT2nSChnbAuhgt42WpAE4A",
-        "fromENV":false
+        "value":"",
+        "fromENV":true
     },
-    "adminRoles": ["1230248717316128778", "1230233825683050649" ],
+    "adminRoles": ["ENV_ADMIN_ROLE_1", "ENV_ADMIN_ROLE_2"],
     "prefix":"!ticket ",
     "languageFile":"english",
 
@@ -22,7 +23,7 @@
         "maxAmountOfTickets":400,
         "dmMessages":false,
 
-        "memberRole":"1230236794512216115",
+        "memberRole":"ENV_MEMBER_ROLE",
         "closeMode":"adminonly",
 
         "transcripts":"transcriptconfig.json",
@@ -40,10 +41,10 @@
             "type":"ticket",
 
             "color":"gray",
-            "adminroles":["1230248717316128778", "1230233825683050649"],
+            "adminroles":["ENV_ADMIN_ROLE_1", "ENV_ADMIN_ROLE_2"],
             "readonlyAdminroles":[""],
             "channelprefix":"verification-",
-            "category":"1230261219135324282",
+            "category":"ENV_TICKET_CATEGORY",
             "message":"You created a ticket!",
             "enableDmOnOpen":false,
             "ticketmessage":"**We need a few things before we can verify your MineStaffs purchase!**\n- Please ensure you have purchased the membership on the Student Union website!\n- Send us your details in this format:\n    Full Name : (first name) (last name)\n    Minecraft Username : (Minecraft Username)\n- Make sure you have logged onto MineStaffs Minecraft Server at least once (ip : minestaffs.online)! We can't give you the rank without it.",
@@ -53,7 +54,7 @@
                     "id": "approve_membership",
                     "name": "✅ Approve Membership",
                     "color": "green",
-                    "roleId": "1230238352326791320",
+                    "roleId": "ENV_APPROVE_MEMBERSHIP_ROLE",
                     "emoji": "✅",
                     "disableAfterUse": true
                 }
@@ -70,7 +71,7 @@
 
             "closedCategory":{
                 "enable":true,
-                "id":"1278168218376339557"
+                "id":"ENV_CLOSED_CATEGORY"
             },
 
             "autoclose":{
@@ -96,10 +97,10 @@
             "type":"ticket",
 
             "color":"red",
-            "adminroles":["1230248717316128778", "1230233825683050649"],
+            "adminroles":["ENV_ADMIN_ROLE_1", "ENV_ADMIN_ROLE_2"],
             "readonlyAdminroles":[""],
             "channelprefix":"report-",
-            "category":"1230261219135324282",
+            "category":"ENV_TICKET_CATEGORY",
             "message":"You created a ticket!",
             "enableDmOnOpen":false,
             "ticketmessage":"The staff will help you soon!\n\n*Click on the button below to close the ticket!*",
@@ -115,7 +116,7 @@
 
             "closedCategory":{
                 "enable":true,
-                "id":"1278168218376339557"
+                "id":"ENV_CLOSED_CATEGORY"
             },
 
             "autoclose":{
@@ -141,10 +142,10 @@
             "type":"ticket",
 
             "color":"gray",
-            "adminroles":["1230248717316128778", "1230233825683050649"],
+            "adminroles":["ENV_ADMIN_ROLE_1", "ENV_ADMIN_ROLE_2"],
             "readonlyAdminroles":[""],
             "channelprefix":"enquiry-",
-            "category":"1230261219135324282",
+            "category":"ENV_TICKET_CATEGORY",
             "message":"You created a ticket!",
             "enableDmOnOpen":false,
             "ticketmessage":"The staff will help you soon!\n\n*Click on the button below to close the ticket!*",
@@ -160,7 +161,7 @@
 
             "closedCategory":{
                 "enable":true,
-                "id":"1278168218376339557"
+                "id":"ENV_CLOSED_CATEGORY"
             },
 
             "autoclose":{
@@ -186,10 +187,10 @@
             "type":"ticket",
 
             "color":"gray",
-            "adminroles":["1230248717316128778", "1230233825683050649"],
+            "adminroles":["ENV_ADMIN_ROLE_1", "ENV_ADMIN_ROLE_2"],
             "readonlyAdminroles":[""],
             "channelprefix":"request-a-warp-",
-            "category":"1230261219135324282",
+            "category":"ENV_TICKET_CATEGORY",
             "message":"You created a ticket!",
             "enableDmOnOpen":false,
             "ticketmessage":"**Lets talk about your warp!**\n\n*- Where is your warp?*\n*- What is your warp?*\n*- What are the co-ordinates to your destination?*\n*- What shall we name it?*\n",
@@ -205,7 +206,7 @@
 
             "closedCategory":{
                 "enable":true,
-                "id":"1278168218376339557"
+                "id":"ENV_CLOSED_CATEGORY"
             },
 
             "autoclose":{
@@ -231,10 +232,10 @@
             "type":"ticket",
 
             "color":"gray",
-            "adminroles":["1230248717316128778", "1230233825683050649"],
+            "adminroles":["ENV_ADMIN_ROLE_1", "ENV_ADMIN_ROLE_2"],
             "readonlyAdminroles":[""],
             "channelprefix":"request-a-image-",
-            "category":"1230261219135324282",
+            "category":"ENV_TICKET_CATEGORY",
             "message":"You created a ticket!",
             "enableDmOnOpen":false,
             "ticketmessage":"**Send your image here!**\n*Images are not guaranteed and must abide by our rules.*",
@@ -250,7 +251,7 @@
 
             "closedCategory":{
                 "enable":true,
-                "id":"1278168218376339557"
+                "id":"ENV_CLOSED_CATEGORY"
             },
 
             "autoclose":{
