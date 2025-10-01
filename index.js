@@ -371,24 +371,32 @@ client.on('interactionCreate', async (interaction) => {
                     // Delete from database
                     db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(interaction.channelId);
                     
-                    // Try to find closed tickets category
-                    let closedCategory = guild.channels.cache.find(c => c.name === 'Closed Tickets' && c.type === ChannelType.GuildCategory);
-                    
-                    if (closedCategory) {
-                        // Move to closed category and lock
-                        try {
-                            await interaction.channel.setParent(closedCategory.id);
-                            await interaction.channel.permissionOverwrites.edit(interaction.channel.guild.id, {
-                                SendMessages: false
-                            });
-                            await interaction.channel.send('🔒 **Ticket closed!**');
-                        } catch (e) {
-                            console.error('Error moving ticket:', e);
+                    if (isOwner && !isAdmin) {
+                        // User closed their own ticket - delete it completely
+                        await interaction.channel.delete();
+                    } else {
+                        // Admin closed ticket - move to closed category for record keeping
+                        let closedCategory = guild.channels.cache.find(c => c.name === 'Closed Tickets' && c.type === ChannelType.GuildCategory);
+                        
+                        if (closedCategory) {
+                            try {
+                                await interaction.channel.setParent(closedCategory.id);
+                                // Remove ticket owner's access
+                                await interaction.channel.permissionOverwrites.edit(ticket.user_id, {
+                                    ViewChannel: false
+                                });
+                                await interaction.channel.permissionOverwrites.edit(guild.id, {
+                                    SendMessages: false
+                                });
+                                await interaction.channel.send('🔒 **Ticket closed!**');
+                            } catch (e) {
+                                console.error('Error moving ticket:', e);
+                                await interaction.channel.delete();
+                            }
+                        } else {
+                            // No closed category, just delete
                             await interaction.channel.delete();
                         }
-                    } else {
-                        // No closed category, just delete
-                        await interaction.channel.delete();
                     }
                 }, 5000);
             }
