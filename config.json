@@ -8,6 +8,7 @@
     "token":{
         "value":"",
         "fromENV":true
+
     },
     "adminRoles": ["ENV_ADMIN_ROLE_1", "ENV_ADMIN_ROLE_2"],
     "prefix":"!ticket ",
