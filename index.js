@@ -25,7 +25,8 @@ db.exec(`
         channel_id TEXT,
         user_id TEXT,
         category TEXT,
-        created_at TEXT
+        created_at TEXT,
+        status TEXT DEFAULT 'open'
     );
     
     CREATE TABLE IF NOT EXISTS ticket_alerts (
@@ -271,7 +272,7 @@ client.on('interactionCreate', async (interaction) => {
             }
             
             else if (subcommand === 'list') {
-                const tickets = db.prepare('SELECT channel_id, user_id, category, created_at FROM active_tickets WHERE guild_id = ?').all(guild.id);
+                const tickets = db.prepare('SELECT channel_id, user_id, category, created_at FROM active_tickets WHERE guild_id = ? AND status = "open"').all(guild.id);
                 
                 if (tickets.length === 0) {
                     return interaction.reply({ content: '📋 No active tickets found!', flags: MessageFlags.Ephemeral });
@@ -368,14 +369,14 @@ client.on('interactionCreate', async (interaction) => {
                 await interaction.reply('🔒 Closing ticket in 5 seconds...');
                 
                 setTimeout(async () => {
-                    // Delete from database
-                    db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(interaction.channelId);
-                    
                     if (isOwner && !isAdmin) {
-                        // User closed their own ticket - delete it completely
+                        // User closed their own ticket - delete completely (so they can reopen)
+                        db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(interaction.channelId);
                         await interaction.channel.delete();
                     } else {
-                        // Admin closed ticket - move to closed category for record keeping
+                        // Admin closed ticket - mark as closed and archive
+                        db.prepare('UPDATE active_tickets SET status = "closed" WHERE channel_id = ?').run(interaction.channelId);
+                        
                         let closedCategory = guild.channels.cache.find(c => c.name === 'Closed Tickets' && c.type === ChannelType.GuildCategory);
                         
                         if (closedCategory) {
@@ -391,10 +392,12 @@ client.on('interactionCreate', async (interaction) => {
                                 await interaction.channel.send('🔒 **Ticket closed!**');
                             } catch (e) {
                                 console.error('Error moving ticket:', e);
+                                db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(interaction.channelId);
                                 await interaction.channel.delete();
                             }
                         } else {
                             // No closed category, just delete
+                            db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(interaction.channelId);
                             await interaction.channel.delete();
                         }
                     }
@@ -402,8 +405,8 @@ client.on('interactionCreate', async (interaction) => {
             }
             
             else if (subcommand === 'menu') {
-                // Check if this is a ticket channel
-                const ticket = db.prepare('SELECT user_id, category FROM active_tickets WHERE channel_id = ?').get(interaction.channelId);
+                // Check if this is a ticket channel (including closed ones)
+                const ticket = db.prepare('SELECT user_id, category, status FROM active_tickets WHERE channel_id = ?').get(interaction.channelId);
                 
                 if (!ticket) {
                     return interaction.reply({ content: '❌ This command can only be used in ticket channels!', flags: MessageFlags.Ephemeral });
@@ -425,12 +428,13 @@ client.on('interactionCreate', async (interaction) => {
                         { name: '👤 Opened By', value: ticketUser ? `${ticketUser} (${userName})` : userName, inline: true },
                         { name: '🏷️ Category', value: ticket.category, inline: true },
                         { name: '📝 Channel', value: `<#${interaction.channelId}>`, inline: true },
+                        { name: '📄 Status', value: ticket.status === 'closed' ? 'Closed' : 'Open', inline: true },
                         { name: '✅ Approval Required', value: hasRoles ? 'Yes' : 'No', inline: true }
                     )
                     .setFooter({ text: 'Managed by overtimehosting' });
                 
-                // Add approve/deny buttons if roles exist (approval needed)
-                if (hasRoles) {
+                // Only show approve/deny buttons if ticket is still open and has roles
+                if (hasRoles && ticket.status !== 'closed') {
                     const approveButton = new ButtonBuilder()
                         .setCustomId(`approve_ticket_${interaction.channelId}`)
                         .setLabel('Approve')
@@ -537,7 +541,7 @@ client.on('interactionCreate', async (interaction) => {
         const category = interaction.values[0];
         
         // Check if user already has a ticket
-        const existing = db.prepare('SELECT channel_id FROM active_tickets WHERE guild_id = ? AND user_id = ?').get(guild.id, interaction.user.id);
+        const existing = db.prepare('SELECT channel_id FROM active_tickets WHERE guild_id = ? AND user_id = ? AND status = "open"').get(guild.id, interaction.user.id);
         
         if (existing) {
             // Verify the channel actually exists
@@ -827,8 +831,8 @@ client.on('interactionCreate', async (interaction) => {
         await interaction.channel.send('❌ **Ticket has been denied by an administrator. Closing...**');
         
         setTimeout(async () => {
-            // Delete from database
-            db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(channelId);
+            // Mark as closed in database
+            db.prepare('UPDATE active_tickets SET status = "closed" WHERE channel_id = ?').run(channelId);
             
             // Try to find closed tickets category
             let closedCategory = guild.channels.cache.find(c => c.name === 'Closed Tickets' && c.type === ChannelType.GuildCategory);
@@ -866,8 +870,8 @@ client.on('interactionCreate', async (interaction) => {
         await interaction.channel.send('🔒 **Ticket is being closed by an administrator...**');
         
         setTimeout(async () => {
-            // Delete from database
-            db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(channelId);
+            // Mark as closed in database
+            db.prepare('UPDATE active_tickets SET status = "closed" WHERE channel_id = ?').run(channelId);
             
             // Try to find closed tickets category
             let closedCategory = guild.channels.cache.find(c => c.name === 'Closed Tickets' && c.type === ChannelType.GuildCategory);
