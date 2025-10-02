@@ -463,6 +463,69 @@ client.on('interactionCreate', async (interaction) => {
                     await interaction.reply({ embeds: [embed], components: [row], flags: MessageFlags.Ephemeral });
                 }
             }
+            
+            else if (subcommand === 'menu') {
+                // Check if this is a ticket channel
+                const ticket = db.prepare('SELECT user_id, category FROM active_tickets WHERE channel_id = ?').get(interaction.channelId);
+                
+                if (!ticket) {
+                    return interaction.reply({ content: '❌ This command can only be used in ticket channels!', flags: MessageFlags.Ephemeral });
+                }
+                
+                // Get ticket info
+                const ticketUser = await guild.members.fetch(ticket.user_id).catch(() => null);
+                const userName = ticketUser ? ticketUser.user.tag : `Unknown User (${ticket.user_id})`;
+                
+                // Get category info (check if it has roles for approval)
+                const categoryData = db.prepare('SELECT roles FROM ticket_categories WHERE guild_id = ? AND name = ?').get(guild.id, ticket.category);
+                const hasRoles = categoryData && JSON.parse(categoryData.roles).length > 0;
+                
+                // Create info embed
+                const embed = new EmbedBuilder()
+                    .setTitle('🎫 Ticket Information')
+                    .setColor(0xFFFFFF)
+                    .addFields(
+                        { name: '👤 Opened By', value: ticketUser ? `${ticketUser} (${userName})` : userName, inline: true },
+                        { name: '🏷️ Category', value: ticket.category, inline: true },
+                        { name: '📝 Channel', value: `<#${interaction.channelId}>`, inline: true },
+                        { name: '✅ Approval Required', value: hasRoles ? 'Yes' : 'No', inline: true }
+                    )
+                    .setFooter({ text: 'Managed by overtimehosting' });
+                
+                // Add approve/deny buttons if roles exist (approval needed)
+                if (hasRoles) {
+                    const approveButton = new ButtonBuilder()
+                        .setCustomId(`approve_ticket_${interaction.channelId}`)
+                        .setLabel('Approve')
+                        .setStyle(ButtonStyle.Success)
+                        .setEmoji('✅');
+                    
+                    const denyButton = new ButtonBuilder()
+                        .setCustomId(`deny_ticket_${interaction.channelId}`)
+                        .setLabel('Deny')
+                        .setStyle(ButtonStyle.Danger)
+                        .setEmoji('❌');
+                    
+                    const closeButton = new ButtonBuilder()
+                        .setCustomId(`close_ticket_menu_${interaction.channelId}`)
+                        .setLabel('Close Ticket')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setEmoji('🔒');
+                    
+                    const row = new ActionRowBuilder().addComponents(approveButton, denyButton, closeButton);
+                    await interaction.reply({ embeds: [embed], components: [row], flags: MessageFlags.Ephemeral });
+                } else {
+                    // No approval needed, just show close button
+                    const closeButton = new ButtonBuilder()
+                        .setCustomId(`close_ticket_menu_${interaction.channelId}`)
+                        .setLabel('Close Ticket')
+                        .setStyle(ButtonStyle.Danger)
+                        .setEmoji('🔒');
+                    
+                    const row = new ActionRowBuilder().addComponents(closeButton);
+                    await interaction.reply({ embeds: [embed], components: [row], flags: MessageFlags.Ephemeral });
+                }
+            }
         }
     }
     
