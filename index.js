@@ -1,7 +1,24 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, ChannelType, MessageFlags } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, ChannelType, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 const Database = require('better-sqlite3');
+const fs = require('fs');
 const db = new Database('tickets.db');
+
+// Load config
+let config = { panels: [], bypass_user_id: null };
+try {
+    if (fs.existsSync('./config.json')) {
+        config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
+        console.log(`✅ Loaded ${config.panels.length} panel(s) from config.json`);
+        if (config.bypass_user_id) {
+            console.log(`✅ Bypass user configured: ${config.bypass_user_id}`);
+        }
+    } else {
+        console.log('⚠️ No config.json found, using empty config');
+    }
+} catch (error) {
+    console.error('❌ Error loading config.json:', error);
+}
 
 // Initialize database
 db.exec(`
@@ -25,8 +42,7 @@ db.exec(`
         channel_id TEXT,
         user_id TEXT,
         category TEXT,
-        created_at TEXT,
-        status TEXT DEFAULT 'open'
+        created_at TEXT
     );
     
     CREATE TABLE IF NOT EXISTS ticket_alerts (
@@ -35,15 +51,68 @@ db.exec(`
     );
 `);
 
+// Migrate database - add new columns if they don't exist
+try {
+    // Check and add config_name to ticket_panels
+    const panelsInfo = db.pragma('table_info(ticket_panels)');
+    const hasConfigName = panelsInfo.some(col => col.name === 'config_name');
+    
+    if (!hasConfigName) {
+        console.log('🔄 Adding config_name column to ticket_panels...');
+        db.exec('ALTER TABLE ticket_panels ADD COLUMN config_name TEXT');
+        console.log('✅ Added config_name column!');
+    }
+    
+    // Check and add status to active_tickets
+    const ticketsInfo = db.pragma('table_info(active_tickets)');
+    const hasStatus = ticketsInfo.some(col => col.name === 'status');
+    
+    if (!hasStatus) {
+        console.log('🔄 Adding status column to active_tickets...');
+        db.exec('ALTER TABLE active_tickets ADD COLUMN status TEXT DEFAULT "open"');
+        // Update existing rows to have 'open' status
+        db.exec('UPDATE active_tickets SET status = "open" WHERE status IS NULL');
+        console.log('✅ Added status column!');
+    }
+    
+    // Check and add form_data to active_tickets
+    const hasFormData = ticketsInfo.some(col => col.name === 'form_data');
+    
+    if (!hasFormData) {
+        console.log('🔄 Adding form_data column to active_tickets...');
+        db.exec('ALTER TABLE active_tickets ADD COLUMN form_data TEXT');
+        console.log('✅ Added form_data column!');
+    }
+    
+    console.log('✅ Database migration complete!');
+} catch (error) {
+    console.error('❌ Database migration error:', error);
+}
+
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMembers
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.DirectMessages
     ],
     partials: []
 });
+
+// Helper: Check if user can bypass permissions
+function canBypassPermissions(userId) {
+    return config.bypass_user_id && userId === config.bypass_user_id;
+}
+
+// Helper: Check if user has admin permissions or is bypass user
+function hasAdminOrBypass(interaction) {
+    if (canBypassPermissions(interaction.user.id)) return true;
+    if (interaction.guild && interaction.memberPermissions) {
+        return interaction.memberPermissions.has(PermissionFlagsBits.Administrator);
+    }
+    return false;
+}
 
 client.once('clientReady', async () => {
     console.log(`Logged in as ${client.user.tag}`);
@@ -59,10 +128,44 @@ client.once('clientReady', async () => {
             description: 'Ticket management commands',
             options: [
                 {
-                    name: 'panel',
-                    description: 'Create a ticket panel',
+                    name: 'deploy',
+                    description: 'Deploy all panels to their configured channels (cleans old messages)',
+                    type: 1
+                },
+                {
+                    name: 'cleanup',
+                    description: 'Delete old bot messages from panel channels',
+                    type: 1
+                },
+                {
+                    name: 'setup',
+                    description: 'Setup a panel from config.json',
                     type: 1,
-                    default_member_permissions: '8', // Administrator
+                    options: [
+                        {
+                            name: 'panel',
+                            description: 'Panel name from config.json',
+                            type: 3,
+                            required: true,
+                            autocomplete: true
+                        },
+                        {
+                            name: 'channel',
+                            description: 'Channel to send the panel to',
+                            type: 7,
+                            required: true
+                        }
+                    ]
+                },
+                {
+                    name: 'refresh',
+                    description: 'Refresh all panels (updates dropdowns)',
+                    type: 1
+                },
+                {
+                    name: 'panel',
+                    description: 'Create a ticket panel (legacy method)',
+                    type: 1,
                     options: [
                         {
                             name: 'channel',
@@ -84,7 +187,7 @@ client.once('clientReady', async () => {
                         },
                         {
                             name: 'categories',
-                            description: 'Categories to include (comma separated, e.g: Support,Bug Report,Applications)',
+                            description: 'Categories to include (comma separated)',
                             type: 3,
                             required: true
                         }
@@ -94,7 +197,6 @@ client.once('clientReady', async () => {
                     name: 'create',
                     description: 'Create a new ticket category',
                     type: 1,
-                    default_member_permissions: '8', // Administrator
                     options: [
                         {
                             name: 'title',
@@ -113,20 +215,17 @@ client.once('clientReady', async () => {
                 {
                     name: 'list',
                     description: 'Show all active tickets',
-                    type: 1,
-                    default_member_permissions: '8' // Administrator
+                    type: 1
                 },
                 {
                     name: 'alerts',
                     description: 'Toggle DM notifications for new tickets',
-                    type: 1,
-                    default_member_permissions: '8' // Administrator
+                    type: 1
                 },
                 {
                     name: 'categories',
                     description: 'List all available ticket categories',
-                    type: 1,
-                    default_member_permissions: '8' // Administrator
+                    type: 1
                 },
                 {
                     name: 'close',
@@ -135,9 +234,8 @@ client.once('clientReady', async () => {
                 },
                 {
                     name: 'menu',
-                    description: 'Show ticket info and actions (admin only)',
-                    type: 1,
-                    default_member_permissions: '8' // Administrator
+                    description: 'Show ticket info and actions',
+                    type: 1
                 }
             ]
         }
@@ -145,47 +243,339 @@ client.once('clientReady', async () => {
 
     try {
         await client.application.commands.set(commands);
-        console.log('Slash commands registered!');
+        console.log('✅ Slash commands registered!');
     } catch (error) {
         console.error('Error registering commands:', error);
     }
 });
 
+// Helper function to get panel config
+function getPanelConfig(panelName) {
+    return config.panels.find(p => p.name.toLowerCase() === panelName.toLowerCase());
+}
+
+// Helper function to get category config from panel
+function getCategoryConfig(panelName, categoryName) {
+    const panel = getPanelConfig(panelName);
+    if (!panel) return null;
+    return panel.categories.find(c => c.name === categoryName);
+}
+
+// Helper function to format channel name with form data
+function formatChannelName(template, username, formData = {}) {
+    let channelName = template;
+    
+    // Replace {username}
+    channelName = channelName.replace('{username}', username);
+    
+    // Replace form field placeholders with fallback
+    // Format: {field_name|fallback}
+    const regex = /{([^}|]+)(?:\|([^}]+))?}/g;
+    channelName = channelName.replace(regex, (match, fieldName, fallback) => {
+        if (formData[fieldName]) {
+            return formData[fieldName];
+        }
+        if (fallback) {
+            return fallback === 'username' ? username : fallback;
+        }
+        return username;
+    });
+    
+    // Clean up channel name (Discord requirements)
+    channelName = channelName.toLowerCase()
+        .replace(/[^a-z0-9-_]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+    
+    return channelName;
+}
+
+// Helper: Delete bot messages in a channel
+async function cleanupChannel(channel) {
+    try {
+        const messages = await channel.messages.fetch({ limit: 100 });
+        const botMessages = messages.filter(m => m.author.id === client.user.id);
+        
+        if (botMessages.size === 0) return 0;
+        
+        // Delete messages one by one (bulk delete only works for messages < 14 days old)
+        let deleted = 0;
+        for (const msg of botMessages.values()) {
+            try {
+                await msg.delete();
+                deleted++;
+                // Small delay to avoid rate limits
+                await new Promise(resolve => setTimeout(resolve, 500));
+            } catch (e) {
+                console.error(`Failed to delete message ${msg.id}:`, e);
+            }
+        }
+        
+        return deleted;
+    } catch (error) {
+        console.error(`Error cleaning up channel ${channel.id}:`, error);
+        return 0;
+    }
+}
+
 // Handle interactions
 client.on('interactionCreate', async (interaction) => {
     try {
+        // Handle autocomplete
+        if (interaction.isAutocomplete()) {
+            if (interaction.commandName === 'ticket' && interaction.options.getSubcommand() === 'setup') {
+                const focusedValue = interaction.options.getFocused().toLowerCase();
+                const choices = config.panels
+                    .filter(panel => panel.name.toLowerCase().includes(focusedValue))
+                    .map(panel => ({ name: panel.title, value: panel.name }));
+                await interaction.respond(choices.slice(0, 25));
+            }
+            return;
+        }
+
         if (interaction.isChatInputCommand()) {
             const { commandName, options } = interaction;
             
-            // Must be used in a guild with available guild object
-            if (!interaction.guild) {
-                console.log('Command used outside guild - rejecting');
-                return interaction.reply({ content: '❌ This command must be used in a Discord server!', flags: MessageFlags.Ephemeral }).catch(console.error);
+            // For DM commands, check if user is bypass user
+            const isFromDM = !interaction.guild;
+            if (isFromDM && !canBypassPermissions(interaction.user.id)) {
+                return interaction.reply({ content: '❌ This command cannot be used in DMs!', flags: MessageFlags.Ephemeral });
             }
             
-            const guild = interaction.guild;
-            console.log(`Command ${commandName} used in guild: ${guild.name} (${guild.id})`);
+            // Get guild (for DM commands, use the first guild the bot is in)
+            let guild = interaction.guild;
+            if (isFromDM) {
+                guild = client.guilds.cache.first();
+                if (!guild) {
+                    return interaction.reply({ content: '❌ Bot is not in any servers!', flags: MessageFlags.Ephemeral });
+                }
+            }
         
         if (commandName === 'ticket') {
             const subcommand = options.getSubcommand();
             
-            if (subcommand === 'panel') {
+            // Check permissions (admin or bypass user)
+            const needsAdmin = ['deploy', 'cleanup', 'setup', 'refresh', 'panel', 'create', 'list', 'categories', 'alerts', 'menu'];
+            if (needsAdmin.includes(subcommand) && !hasAdminOrBypass(interaction)) {
+                return interaction.reply({ content: '❌ You need Administrator permission or be the bypass user!', flags: MessageFlags.Ephemeral });
+            }
+            
+            if (subcommand === 'deploy') {
+                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                
+                let deployed = 0;
+                let cleaned = 0;
+                const results = [];
+                
+                for (const panelConfig of config.panels) {
+                    if (!panelConfig.channel_id) {
+                        results.push(`⚠️ ${panelConfig.title}: No channel_id configured`);
+                        continue;
+                    }
+                    
+                    try {
+                        const channel = await guild.channels.fetch(panelConfig.channel_id);
+                        
+                        // Cleanup old bot messages
+                        const deletedCount = await cleanupChannel(channel);
+                        cleaned += deletedCount;
+                        
+                        // Create embed
+                        const embed = new EmbedBuilder()
+                            .setTitle(panelConfig.title)
+                            .setDescription(panelConfig.description)
+                            .setColor(0xFFFFFF)
+                            .setFooter({ text: 'Managed by overtimehosting' });
+                        
+                        // Create dropdown
+                        const selectMenu = new StringSelectMenuBuilder()
+                            .setCustomId(`ticket_dropdown_${panelConfig.name}`)
+                            .setPlaceholder('Select a ticket type...')
+                            .addOptions(
+                                panelConfig.categories.map(cat => ({
+                                    label: cat.name,
+                                    value: cat.name,
+                                    emoji: cat.emoji || '🎫'
+                                }))
+                            );
+                        
+                        const row = new ActionRowBuilder().addComponents(selectMenu);
+                        const panelMsg = await channel.send({ embeds: [embed], components: [row] });
+                        
+                        // Save to database (with 7 columns now)
+                        db.prepare('INSERT INTO ticket_panels (guild_id, channel_id, message_id, title, description, categories, config_name) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+                            guild.id,
+                            channel.id,
+                            panelMsg.id,
+                            panelConfig.title,
+                            panelConfig.description,
+                            JSON.stringify(panelConfig.categories.map(c => c.name)),
+                            panelConfig.name
+                        );
+                        
+                        deployed++;
+                        results.push(`✅ ${panelConfig.title} → <#${channel.id}>`);
+                    } catch (error) {
+                        console.error(`Failed to deploy panel ${panelConfig.name}:`, error);
+                        results.push(`❌ ${panelConfig.title}: ${error.message}`);
+                    }
+                }
+                
+                const summary = `🚀 **Deployment Complete!**\n\n📋 Deployed: ${deployed} panel(s)\n🗑️ Cleaned: ${cleaned} old message(s)\n\n${results.join('\n')}`;
+                await interaction.editReply({ content: summary });
+            }
+            
+            else if (subcommand === 'cleanup') {
+                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                
+                let totalCleaned = 0;
+                const results = [];
+                
+                for (const panelConfig of config.panels) {
+                    if (!panelConfig.channel_id) continue;
+                    
+                    try {
+                        const channel = await guild.channels.fetch(panelConfig.channel_id);
+                        const deleted = await cleanupChannel(channel);
+                        totalCleaned += deleted;
+                        results.push(`🗑️ <#${channel.id}>: ${deleted} message(s)`);
+                    } catch (error) {
+                        console.error(`Failed to cleanup channel ${panelConfig.channel_id}:`, error);
+                        results.push(`❌ ${panelConfig.title}: ${error.message}`);
+                    }
+                }
+                
+                const summary = `🧹 **Cleanup Complete!**\n\nDeleted ${totalCleaned} old bot message(s)\n\n${results.join('\n')}`;
+                await interaction.editReply({ content: summary });
+            }
+            
+            else if (subcommand === 'setup') {
+                const panelName = options.getString('panel');
+                const channelOption = options.getChannel('channel');
+                
+                const panelConfig = getPanelConfig(panelName);
+                if (!panelConfig) {
+                    return interaction.reply({ content: `❌ Panel "${panelName}" not found in config.json!`, flags: MessageFlags.Ephemeral });
+                }
+                
+                const channel = await guild.channels.fetch(channelOption.id);
+                
+                // Create embed
+                const embed = new EmbedBuilder()
+                    .setTitle(panelConfig.title)
+                    .setDescription(panelConfig.description)
+                    .setColor(0xFFFFFF)
+                    .setFooter({ text: 'Managed by overtimehosting' });
+                
+                // Create dropdown
+                const selectMenu = new StringSelectMenuBuilder()
+                    .setCustomId(`ticket_dropdown_${panelName}`)
+                    .setPlaceholder('Select a ticket type...')
+                    .addOptions(
+                        panelConfig.categories.map(cat => ({
+                            label: cat.name,
+                            value: cat.name,
+                            emoji: cat.emoji || '🎫'
+                        }))
+                    );
+                
+                const row = new ActionRowBuilder().addComponents(selectMenu);
+                const panelMsg = await channel.send({ embeds: [embed], components: [row] });
+                
+                // Save to database
+                db.prepare('INSERT INTO ticket_panels (guild_id, channel_id, message_id, title, description, categories, config_name) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+                    guild.id,
+                    channel.id,
+                    panelMsg.id,
+                    panelConfig.title,
+                    panelConfig.description,
+                    JSON.stringify(panelConfig.categories.map(c => c.name)),
+                    panelName
+                );
+                
+                await interaction.reply({ 
+                    content: `✅ Panel "${panelConfig.title}" created in ${channel}!\n📋 Categories: ${panelConfig.categories.map(c => c.name).join(', ')}`, 
+                    flags: MessageFlags.Ephemeral 
+                });
+            }
+            
+            else if (subcommand === 'refresh') {
+                const panels = db.prepare('SELECT * FROM ticket_panels WHERE guild_id = ?').all(guild.id);
+                
+                if (panels.length === 0) {
+                    return interaction.reply({ content: '❌ No panels found!', flags: MessageFlags.Ephemeral });
+                }
+                
+                let refreshed = 0;
+                let failed = 0;
+                
+                for (const panel of panels) {
+                    try {
+                        const channel = await guild.channels.fetch(panel.channel_id);
+                        const message = await channel.messages.fetch(panel.message_id);
+                        
+                        // Recreate the dropdown from config if available
+                        if (panel.config_name) {
+                            const panelConfig = getPanelConfig(panel.config_name);
+                            if (panelConfig) {
+                                const selectMenu = new StringSelectMenuBuilder()
+                                    .setCustomId(`ticket_dropdown_${panel.config_name}`)
+                                    .setPlaceholder('Select a ticket type...')
+                                    .addOptions(
+                                        panelConfig.categories.map(cat => ({
+                                            label: cat.name,
+                                            value: cat.name,
+                                            emoji: cat.emoji || '🎫'
+                                        }))
+                                    );
+                                
+                                const row = new ActionRowBuilder().addComponents(selectMenu);
+                                await message.edit({ components: [row] });
+                                refreshed++;
+                            }
+                        } else {
+                            // Legacy panel - recreate from stored categories
+                            const categories = JSON.parse(panel.categories);
+                            const selectMenu = new StringSelectMenuBuilder()
+                                .setCustomId('ticket_dropdown')
+                                .setPlaceholder('Select a ticket type...')
+                                .addOptions(
+                                    categories.map(catName => ({
+                                        label: catName,
+                                        value: catName,
+                                        emoji: '🎫'
+                                    }))
+                                );
+                            
+                            const row = new ActionRowBuilder().addComponents(selectMenu);
+                            await message.edit({ components: [row] });
+                            refreshed++;
+                        }
+                    } catch (error) {
+                        console.error(`Failed to refresh panel ${panel.message_id}:`, error);
+                        failed++;
+                    }
+                }
+                
+                await interaction.reply({ 
+                    content: `✅ Refreshed ${refreshed} panel(s)${failed > 0 ? ` (${failed} failed)` : ''}`, 
+                    flags: MessageFlags.Ephemeral 
+                });
+            }
+            
+            else if (subcommand === 'panel') {
                 const channelOption = options.getChannel('channel');
                 const title = options.getString('title');
                 const description = options.getString('description');
                 const categoriesInput = options.getString('categories');
                 
-                // Parse categories from comma-separated input
                 const requestedCategories = categoriesInput.split(',').map(c => c.trim()).filter(c => c.length > 0);
                 
                 if (requestedCategories.length === 0) {
                     return interaction.reply({ content: '❌ Please provide at least one category!', flags: MessageFlags.Ephemeral });
                 }
                 
-                // Fetch the actual channel object from the guild
                 const channel = await guild.channels.fetch(channelOption.id);
-                
-                // Get all available categories
                 const allCategories = db.prepare('SELECT name FROM ticket_categories WHERE guild_id = ?').all(guild.id);
                 const availableCategoryNames = allCategories.map(c => c.name);
                 
@@ -193,39 +583,27 @@ client.on('interactionCreate', async (interaction) => {
                     return interaction.reply({ content: '❌ No ticket categories found! Create some with `/ticket create` first.', flags: MessageFlags.Ephemeral });
                 }
                 
-                // Validate that requested categories exist
-                const validCategories = [];
-                const invalidCategories = [];
-                
-                for (const reqCat of requestedCategories) {
-                    if (availableCategoryNames.includes(reqCat)) {
-                        validCategories.push(reqCat);
-                    } else {
-                        invalidCategories.push(reqCat);
-                    }
-                }
+                const validCategories = requestedCategories.filter(cat => availableCategoryNames.includes(cat));
+                const invalidCategories = requestedCategories.filter(cat => !availableCategoryNames.includes(cat));
                 
                 if (validCategories.length === 0) {
                     return interaction.reply({ 
-                        content: `❌ None of the specified categories exist!\n\nAvailable categories: ${availableCategoryNames.join(', ')}`, 
+                        content: `❌ None of the specified categories exist!\n\nAvailable: ${availableCategoryNames.join(', ')}`, 
                         flags: MessageFlags.Ephemeral 
                     });
                 }
                 
-                // Warn about invalid categories but continue with valid ones
                 let warningMessage = '';
                 if (invalidCategories.length > 0) {
-                    warningMessage = `\n⚠️ Note: These categories don't exist and were skipped: ${invalidCategories.join(', ')}`;
+                    warningMessage = `\n⚠️ Skipped: ${invalidCategories.join(', ')}`;
                 }
                 
-                // Create embed
                 const embed = new EmbedBuilder()
                     .setTitle(title)
                     .setDescription(description)
                     .setColor(0xFFFFFF)
                     .setFooter({ text: 'Managed by overtimehosting' });
                 
-                // Create dropdown with only the valid categories
                 const selectMenu = new StringSelectMenuBuilder()
                     .setCustomId('ticket_dropdown')
                     .setPlaceholder('Select a ticket type...')
@@ -237,28 +615,28 @@ client.on('interactionCreate', async (interaction) => {
                     );
                 
                 const row = new ActionRowBuilder().addComponents(selectMenu);
-                
                 const panelMsg = await channel.send({ embeds: [embed], components: [row] });
                 
-                // Save panel with its specific categories
-                db.prepare('INSERT INTO ticket_panels VALUES (?, ?, ?, ?, ?, ?)').run(
+                db.prepare('INSERT INTO ticket_panels (guild_id, channel_id, message_id, title, description, categories, config_name) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
                     guild.id,
                     channel.id,
                     panelMsg.id,
                     title,
                     description,
-                    JSON.stringify(validCategories)
+                    JSON.stringify(validCategories),
+                    null
                 );
                 
-                const successMsg = `✅ Ticket panel created in ${channel}!\n🏷️ Categories: ${validCategories.join(', ')}${warningMessage}`;
-                await interaction.reply({ content: successMsg, flags: MessageFlags.Ephemeral });
+                await interaction.reply({ 
+                    content: `✅ Panel created in ${channel}!\n🏷️ Categories: ${validCategories.join(', ')}${warningMessage}`, 
+                    flags: MessageFlags.Ephemeral 
+                });
             }
             
             else if (subcommand === 'create') {
                 const title = options.getString('title');
                 const role = options.getRole('role');
                 
-                // Check if exists
                 const exists = db.prepare('SELECT name FROM ticket_categories WHERE guild_id = ? AND name = ?').get(guild.id, title);
                 if (exists) {
                     return interaction.reply({ content: `❌ Category **${title}** already exists!`, flags: MessageFlags.Ephemeral });
@@ -268,19 +646,19 @@ client.on('interactionCreate', async (interaction) => {
                 db.prepare('INSERT INTO ticket_categories VALUES (?, ?, ?)').run(guild.id, title, roles);
                 
                 const roleText = role ? ` (Role: ${role})` : '';
-                await interaction.reply({ content: `✅ Created ticket category: **${title}**${roleText}`, flags: MessageFlags.Ephemeral });
+                await interaction.reply({ content: `✅ Created category: **${title}**${roleText}`, flags: MessageFlags.Ephemeral });
             }
             
             else if (subcommand === 'list') {
-                const tickets = db.prepare('SELECT channel_id, user_id, category, created_at FROM active_tickets WHERE guild_id = ? AND status = "open"').all(guild.id);
+                const tickets = db.prepare('SELECT channel_id, user_id, category, created_at FROM active_tickets WHERE guild_id = ? AND (status = "open" OR status IS NULL)').all(guild.id);
                 
                 if (tickets.length === 0) {
-                    return interaction.reply({ content: '📋 No active tickets found!', flags: MessageFlags.Ephemeral });
+                    return interaction.reply({ content: '📋 No active tickets!', flags: MessageFlags.Ephemeral });
                 }
                 
                 const embed = new EmbedBuilder()
                     .setTitle('🎫 Active Tickets')
-                    .setDescription(`Total: ${tickets.length} ticket(s)`)
+                    .setDescription(`Total: ${tickets.length}`)
                     .setColor(0xFFFFFF)
                     .setFooter({ text: 'Managed by overtimehosting' });
                 
@@ -302,10 +680,10 @@ client.on('interactionCreate', async (interaction) => {
                 
                 if (exists) {
                     db.prepare('DELETE FROM ticket_alerts WHERE guild_id = ? AND user_id = ?').run(guild.id, interaction.user.id);
-                    await interaction.reply({ content: '🔕 Ticket alerts **disabled**', flags: MessageFlags.Ephemeral });
+                    await interaction.reply({ content: '🔕 Alerts disabled', flags: MessageFlags.Ephemeral });
                 } else {
                     db.prepare('INSERT INTO ticket_alerts VALUES (?, ?)').run(guild.id, interaction.user.id);
-                    await interaction.reply({ content: '🔔 Ticket alerts **enabled**! You\'ll receive DMs when tickets are opened.', flags: MessageFlags.Ephemeral });
+                    await interaction.reply({ content: '🔔 Alerts enabled!', flags: MessageFlags.Ephemeral });
                 }
             }
             
@@ -313,293 +691,320 @@ client.on('interactionCreate', async (interaction) => {
                 const categories = db.prepare('SELECT name, roles FROM ticket_categories WHERE guild_id = ?').all(guild.id);
                 
                 if (categories.length === 0) {
-                    return interaction.reply({ content: '📋 No ticket categories found! Create some with `/ticket create` first.', flags: MessageFlags.Ephemeral });
+                    return interaction.reply({ content: '📋 No categories found!', flags: MessageFlags.Ephemeral });
                 }
                 
                 const embed = new EmbedBuilder()
-                    .setTitle('🏷️ Available Ticket Categories')
-                    .setDescription(`Total: ${categories.length} categor${categories.length === 1 ? 'y' : 'ies'}\n\n**Use these names when creating panels:**`)
+                    .setTitle('🏷️ Available Categories')
+                    .setDescription(`Total: ${categories.length}`)
                     .setColor(0xFFFFFF)
                     .setFooter({ text: 'Managed by overtimehosting' });
                 
                 for (const cat of categories) {
                     const roleIds = JSON.parse(cat.roles);
-                    let roleText = 'No role (support ticket)';
+                    let roleText = 'Support ticket';
                     
                     if (roleIds.length > 0) {
                         const roles = roleIds.map(id => {
                             const role = guild.roles.cache.get(id);
-                            return role ? role.name : 'Unknown Role';
+                            return role ? role.name : 'Unknown';
                         });
-                        roleText = `Role given on approval: ${roles.join(', ')}`;
+                        roleText = `Role: ${roles.join(', ')}`;
                     }
                     
-                    embed.addFields({
-                        name: `\`${cat.name}\``,
-                        value: roleText,
-                        inline: false
-                    });
+                    embed.addFields({ name: `\`${cat.name}\``, value: roleText, inline: false });
                 }
-                
-                embed.addFields({
-                    name: '💡 Example Usage',
-                    value: '`/ticket panel channel:#tickets title:Support categories:' + categories.slice(0, 2).map(c => c.name).join(',') + '`',
-                    inline: false
-                });
                 
                 await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             }
             
             else if (subcommand === 'close') {
-                // Check if this is a ticket channel
+                if (isFromDM) {
+                    return interaction.reply({ content: '❌ Cannot close tickets from DMs!', flags: MessageFlags.Ephemeral });
+                }
+                
                 const ticket = db.prepare('SELECT user_id, category FROM active_tickets WHERE channel_id = ?').get(interaction.channelId);
                 
                 if (!ticket) {
-                    return interaction.reply({ content: '❌ This command can only be used in ticket channels!', flags: MessageFlags.Ephemeral });
+                    return interaction.reply({ content: '❌ Not a ticket channel!', flags: MessageFlags.Ephemeral });
                 }
                 
-                // Check if user is ticket owner or has admin perms
                 const isOwner = ticket.user_id === interaction.user.id;
-                const isAdmin = interaction.memberPermissions.has(PermissionFlagsBits.Administrator);
+                const isAdmin = hasAdminOrBypass(interaction);
                 
                 if (!isOwner && !isAdmin) {
                     return interaction.reply({ content: '❌ You can only close your own tickets!', flags: MessageFlags.Ephemeral });
                 }
                 
-                await interaction.reply('🔒 Closing ticket in 5 seconds...');
+                await interaction.reply('🔒 Closing in 5 seconds...');
                 
                 setTimeout(async () => {
-                    if (isOwner && !isAdmin) {
-                        // User closed their own ticket - delete completely (so they can reopen)
-                        db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(interaction.channelId);
-                        await interaction.channel.delete();
-                    } else {
-                        // Admin closed ticket - mark as closed and archive
-                        db.prepare('UPDATE active_tickets SET status = "closed" WHERE channel_id = ?').run(interaction.channelId);
-                        
-                        let closedCategory = guild.channels.cache.find(c => c.name === 'Closed Tickets' && c.type === ChannelType.GuildCategory);
-                        
-                        if (closedCategory) {
-                            try {
-                                await interaction.channel.setParent(closedCategory.id);
-                                // Remove ticket owner's access
-                                await interaction.channel.permissionOverwrites.edit(ticket.user_id, {
-                                    ViewChannel: false
-                                });
-                                await interaction.channel.permissionOverwrites.edit(guild.id, {
-                                    SendMessages: false
-                                });
-                                await interaction.channel.send('🔒 **Ticket closed!**');
-                            } catch (e) {
-                                console.error('Error moving ticket:', e);
-                                db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(interaction.channelId);
-                                await interaction.channel.delete();
-                            }
-                        } else {
-                            // No closed category, just delete
-                            db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(interaction.channelId);
-                            await interaction.channel.delete();
-                        }
-                    }
+                    db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(interaction.channelId);
+                    await interaction.channel.delete();
                 }, 5000);
             }
             
             else if (subcommand === 'menu') {
-                // Check if this is a ticket channel (including closed ones)
-                const ticket = db.prepare('SELECT user_id, category, status FROM active_tickets WHERE channel_id = ?').get(interaction.channelId);
-                
-                if (!ticket) {
-                    return interaction.reply({ content: '❌ This command can only be used in ticket channels!', flags: MessageFlags.Ephemeral });
+                if (isFromDM) {
+                    return interaction.reply({ content: '❌ Cannot use menu from DMs!', flags: MessageFlags.Ephemeral });
                 }
                 
-                // Get ticket info
-                const ticketUser = await guild.members.fetch(ticket.user_id).catch(() => null);
-                const userName = ticketUser ? ticketUser.user.tag : `Unknown User (${ticket.user_id})`;
+                const ticket = db.prepare('SELECT user_id, category, status, form_data FROM active_tickets WHERE channel_id = ?').get(interaction.channelId);
                 
-                // Get category info (check if it has roles for approval)
+                if (!ticket) {
+                    return interaction.reply({ content: '❌ Not a ticket channel!', flags: MessageFlags.Ephemeral });
+                }
+                
+                const ticketUser = await guild.members.fetch(ticket.user_id).catch(() => null);
+                const userName = ticketUser ? ticketUser.user.tag : `Unknown (${ticket.user_id})`;
+                
                 const categoryData = db.prepare('SELECT roles FROM ticket_categories WHERE guild_id = ? AND name = ?').get(guild.id, ticket.category);
                 const hasRoles = categoryData && JSON.parse(categoryData.roles).length > 0;
                 
-                // Create info embed
                 const embed = new EmbedBuilder()
                     .setTitle('🎫 Ticket Information')
                     .setColor(0xFFFFFF)
                     .addFields(
-                        { name: '👤 Opened By', value: ticketUser ? `${ticketUser} (${userName})` : userName, inline: true },
+                        { name: '👤 User', value: ticketUser ? `${ticketUser}` : userName, inline: true },
                         { name: '🏷️ Category', value: ticket.category, inline: true },
-                        { name: '📝 Channel', value: `<#${interaction.channelId}>`, inline: true },
-                        { name: '📄 Status', value: ticket.status === 'closed' ? 'Closed' : 'Open', inline: true },
-                        { name: '✅ Approval Required', value: hasRoles ? 'Yes' : 'No', inline: true }
+                        { name: '📄 Status', value: ticket.status === 'closed' ? 'Closed' : 'Open', inline: true }
                     )
                     .setFooter({ text: 'Managed by overtimehosting' });
                 
-                // Only show approve/deny buttons if ticket is still open and has roles
+                // Add form data if exists
+                if (ticket.form_data) {
+                    try {
+                        const formData = JSON.parse(ticket.form_data);
+                        const formFields = Object.entries(formData)
+                            .map(([key, value]) => `**${key.replace(/_/g, ' ').toUpperCase()}:** ${value}`)
+                            .join('\n');
+                        embed.addFields({ name: '📋 Form Data', value: formFields, inline: false });
+                    } catch (e) {}
+                }
+                
                 if (hasRoles && ticket.status !== 'closed') {
-                    const approveButton = new ButtonBuilder()
+                    const approveBtn = new ButtonBuilder()
                         .setCustomId(`approve_ticket_${interaction.channelId}`)
                         .setLabel('Approve')
                         .setStyle(ButtonStyle.Success)
                         .setEmoji('✅');
                     
-                    const denyButton = new ButtonBuilder()
+                    const denyBtn = new ButtonBuilder()
                         .setCustomId(`deny_ticket_${interaction.channelId}`)
                         .setLabel('Deny')
                         .setStyle(ButtonStyle.Danger)
                         .setEmoji('❌');
                     
-                    const closeButton = new ButtonBuilder()
+                    const closeBtn = new ButtonBuilder()
                         .setCustomId(`close_ticket_menu_${interaction.channelId}`)
-                        .setLabel('Close Ticket')
+                        .setLabel('Close')
                         .setStyle(ButtonStyle.Secondary)
                         .setEmoji('🔒');
                     
-                    const row = new ActionRowBuilder().addComponents(approveButton, denyButton, closeButton);
+                    const row = new ActionRowBuilder().addComponents(approveBtn, denyBtn, closeBtn);
                     await interaction.reply({ embeds: [embed], components: [row], flags: MessageFlags.Ephemeral });
                 } else {
-                    // No approval needed, just show close button
-                    const closeButton = new ButtonBuilder()
+                    const closeBtn = new ButtonBuilder()
                         .setCustomId(`close_ticket_menu_${interaction.channelId}`)
-                        .setLabel('Close Ticket')
+                        .setLabel('Close')
                         .setStyle(ButtonStyle.Danger)
                         .setEmoji('🔒');
                     
-                    const row = new ActionRowBuilder().addComponents(closeButton);
-                    await interaction.reply({ embeds: [embed], components: [row], flags: MessageFlags.Ephemeral });
-                }
-            }
-            
-            else if (subcommand === 'menu') {
-                // Check if this is a ticket channel
-                const ticket = db.prepare('SELECT user_id, category FROM active_tickets WHERE channel_id = ?').get(interaction.channelId);
-                
-                if (!ticket) {
-                    return interaction.reply({ content: '❌ This command can only be used in ticket channels!', flags: MessageFlags.Ephemeral });
-                }
-                
-                // Get ticket info
-                const ticketUser = await guild.members.fetch(ticket.user_id).catch(() => null);
-                const userName = ticketUser ? ticketUser.user.tag : `Unknown User (${ticket.user_id})`;
-                
-                // Get category info (check if it has roles for approval)
-                const categoryData = db.prepare('SELECT roles FROM ticket_categories WHERE guild_id = ? AND name = ?').get(guild.id, ticket.category);
-                const hasRoles = categoryData && JSON.parse(categoryData.roles).length > 0;
-                
-                // Create info embed
-                const embed = new EmbedBuilder()
-                    .setTitle('🎫 Ticket Information')
-                    .setColor(0xFFFFFF)
-                    .addFields(
-                        { name: '👤 Opened By', value: ticketUser ? `${ticketUser} (${userName})` : userName, inline: true },
-                        { name: '🏷️ Category', value: ticket.category, inline: true },
-                        { name: '📝 Channel', value: `<#${interaction.channelId}>`, inline: true },
-                        { name: '✅ Approval Required', value: hasRoles ? 'Yes' : 'No', inline: true }
-                    )
-                    .setFooter({ text: 'Managed by overtimehosting' });
-                
-                // Add approve/deny buttons if roles exist (approval needed)
-                if (hasRoles) {
-                    const approveButton = new ButtonBuilder()
-                        .setCustomId(`approve_ticket_${interaction.channelId}`)
-                        .setLabel('Approve')
-                        .setStyle(ButtonStyle.Success)
-                        .setEmoji('✅');
-                    
-                    const denyButton = new ButtonBuilder()
-                        .setCustomId(`deny_ticket_${interaction.channelId}`)
-                        .setLabel('Deny')
-                        .setStyle(ButtonStyle.Danger)
-                        .setEmoji('❌');
-                    
-                    const closeButton = new ButtonBuilder()
-                        .setCustomId(`close_ticket_menu_${interaction.channelId}`)
-                        .setLabel('Close Ticket')
-                        .setStyle(ButtonStyle.Secondary)
-                        .setEmoji('🔒');
-                    
-                    const row = new ActionRowBuilder().addComponents(approveButton, denyButton, closeButton);
-                    await interaction.reply({ embeds: [embed], components: [row], flags: MessageFlags.Ephemeral });
-                } else {
-                    // No approval needed, just show close button
-                    const closeButton = new ButtonBuilder()
-                        .setCustomId(`close_ticket_menu_${interaction.channelId}`)
-                        .setLabel('Close Ticket')
-                        .setStyle(ButtonStyle.Danger)
-                        .setEmoji('🔒');
-                    
-                    const row = new ActionRowBuilder().addComponents(closeButton);
+                    const row = new ActionRowBuilder().addComponents(closeBtn);
                     await interaction.reply({ embeds: [embed], components: [row], flags: MessageFlags.Ephemeral });
                 }
             }
         }
     }
     
-    // Handle dropdown selection
-    else if (interaction.isStringSelectMenu() && interaction.customId === 'ticket_dropdown') {
+    // Handle dropdown - REMOVED RESTRICTION - Multi-use enabled!
+    else if (interaction.isStringSelectMenu() && interaction.customId.startsWith('ticket_dropdown')) {
         if (!interaction.guild) return;
         const guild = interaction.guild;
         
         const category = interaction.values[0];
         
-        // Check if user already has a ticket
-        const existing = db.prepare('SELECT channel_id FROM active_tickets WHERE guild_id = ? AND user_id = ? AND status = "open"').get(guild.id, interaction.user.id);
+        // Extract panel name if it's a config-based dropdown
+        const panelName = interaction.customId.replace('ticket_dropdown_', '') || null;
+        const categoryConfig = panelName ? getCategoryConfig(panelName, category) : null;
         
-        if (existing) {
-            // Verify the channel actually exists
-            const channelExists = await guild.channels.fetch(existing.channel_id).catch(() => null);
+        // NO RESTRICTION - Users can create unlimited tickets!
+        
+        // Check if category needs a form
+        if (categoryConfig && categoryConfig.form) {
+            // Show modal
+            const modal = new ModalBuilder()
+                .setCustomId(`ticket_form_${panelName}_${category}`)
+                .setTitle(categoryConfig.form.title);
             
-            if (channelExists) {
-                // Channel exists, deny
-                return interaction.reply({ content: `❌ You already have an active ticket: <#${existing.channel_id}>`, flags: MessageFlags.Ephemeral });
-            } else {
-                // Channel was deleted but database still has it, clean it up
-                db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(existing.channel_id);
-                console.log(`Cleaned up orphaned ticket record for user ${interaction.user.id}`);
+            const rows = [];
+            for (const field of categoryConfig.form.fields) {
+                const textInput = new TextInputBuilder()
+                    .setCustomId(field.id)
+                    .setLabel(field.label)
+                    .setStyle(field.style === 'long' ? TextInputStyle.Paragraph : TextInputStyle.Short)
+                    .setPlaceholder(field.placeholder || '')
+                    .setRequired(field.required !== false);
+                
+                rows.push(new ActionRowBuilder().addComponents(textInput));
+            }
+            
+            modal.addComponents(...rows.slice(0, 5)); // Discord limit: 5 components
+            await interaction.showModal(modal);
+        } else {
+            // Create ticket without form
+            await createTicket(interaction, guild, category, categoryConfig, {});
+        }
+    }
+    
+    // Handle modal submit
+    else if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_form_')) {
+        if (!interaction.guild) return;
+        const guild = interaction.guild;
+        
+        const parts = interaction.customId.split('_');
+        const panelName = parts[2];
+        const category = parts.slice(3).join('_');
+        
+        const categoryConfig = getCategoryConfig(panelName, category);
+        
+        // Collect form data
+        const formData = {};
+        if (categoryConfig && categoryConfig.form) {
+            for (const field of categoryConfig.form.fields) {
+                try {
+                    const value = interaction.fields.getTextInputValue(field.id);
+                    if (value) {
+                        formData[field.id] = value;
+                    }
+                } catch (e) {
+                    // Field might not be required and empty
+                }
             }
         }
         
-        // Check how many tickets this user has opened for this category
-        const userCategoryTickets = db.prepare('SELECT channel_id FROM active_tickets WHERE guild_id = ? AND user_id = ? AND category = ?').all(guild.id, interaction.user.id, category);
+        await createTicket(interaction, guild, category, categoryConfig, formData);
+    }
+    
+    // Handle buttons
+    else if (interaction.isButton()) {
+        if (!interaction.guild) return;
+        const guild = interaction.guild;
         
-        // Verify each ticket channel exists and clean up orphaned records
-        let validTicketCount = 0;
-        for (const ticket of userCategoryTickets) {
-            const channelExists = await guild.channels.fetch(ticket.channel_id).catch(() => null);
-            if (channelExists) {
-                validTicketCount++;
-            } else {
-                // Clean up orphaned record
-                db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(ticket.channel_id);
-                console.log(`Cleaned up orphaned ticket record for channel ${ticket.channel_id}`);
+        if (interaction.customId.startsWith('approve_ticket_')) {
+            if (!hasAdminOrBypass(interaction)) {
+                return interaction.reply({ content: '❌ Admin only!', flags: MessageFlags.Ephemeral });
             }
+            
+            const channelId = interaction.customId.replace('approve_ticket_', '');
+            const ticket = db.prepare('SELECT user_id, category FROM active_tickets WHERE channel_id = ?').get(channelId);
+            
+            if (!ticket) {
+                return interaction.reply({ content: '❌ Ticket not found!', flags: MessageFlags.Ephemeral });
+            }
+            
+            const categoryData = db.prepare('SELECT roles FROM ticket_categories WHERE guild_id = ? AND name = ?').get(guild.id, ticket.category);
+            const roleIds = categoryData ? JSON.parse(categoryData.roles) : [];
+            const ticketUser = await guild.members.fetch(ticket.user_id).catch(() => null);
+            
+            if (!ticketUser) {
+                return interaction.reply({ content: '❌ User not found!', flags: MessageFlags.Ephemeral });
+            }
+            
+            let rolesGiven = [];
+            for (const roleId of roleIds) {
+                const role = guild.roles.cache.get(roleId);
+                if (role) {
+                    try {
+                        await ticketUser.roles.add(role);
+                        rolesGiven.push(role.name);
+                    } catch (e) {}
+                }
+            }
+            
+            const approveEmbed = new EmbedBuilder()
+                .setTitle('✅ Ticket Approved')
+                .setDescription(`Your ticket has been approved!${rolesGiven.length > 0 ? `\n\n**Roles given:** ${rolesGiven.join(', ')}` : ''}`)
+                .setColor(0x00FF00)
+                .setFooter({ text: 'Managed by overtimehosting' });
+            
+            await interaction.channel.send({ embeds: [approveEmbed] });
+            await interaction.reply({ content: `✅ Approved!${rolesGiven.length > 0 ? ` Gave: ${rolesGiven.join(', ')}` : ''}`, flags: MessageFlags.Ephemeral });
+            
+            try {
+                await interaction.message.edit({ components: [] });
+            } catch (e) {}
         }
         
-        // Check if user has reached limit for this category
-        if (validTicketCount >= 4) {
-            return interaction.reply({ content: `❌ You have reached the maximum of 4 tickets for **${category}**. Please close some tickets before opening more.`, flags: MessageFlags.Ephemeral });
+        else if (interaction.customId.startsWith('deny_ticket_')) {
+            if (!hasAdminOrBypass(interaction)) {
+                return interaction.reply({ content: '❌ Admin only!', flags: MessageFlags.Ephemeral });
+            }
+            
+            const channelId = interaction.customId.replace('deny_ticket_', '');
+            const ticket = db.prepare('SELECT user_id FROM active_tickets WHERE channel_id = ?').get(channelId);
+            
+            if (ticket) {
+                const ticketUser = await guild.members.fetch(ticket.user_id).catch(() => null);
+                if (ticketUser) {
+                    try {
+                        await ticketUser.send(`❌ Your ticket in **${guild.name}** was denied.`);
+                    } catch (e) {}
+                }
+            }
+            
+            await interaction.reply({ content: '❌ Denied! Closing...', flags: MessageFlags.Ephemeral });
+            await interaction.channel.send('❌ **Ticket denied. Closing...**');
+            
+            setTimeout(async () => {
+                db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(channelId);
+                await interaction.channel.delete();
+            }, 5000);
         }
         
-        // Get roles for category (only used for approval, NOT for permissions)
-        const catData = db.prepare('SELECT roles FROM ticket_categories WHERE guild_id = ? AND name = ?').get(guild.id, category);
-        const roleIds = catData ? JSON.parse(catData.roles) : [];
+        else if (interaction.customId.startsWith('close_ticket_menu_')) {
+            if (!hasAdminOrBypass(interaction)) {
+                return interaction.reply({ content: '❌ Admin only!', flags: MessageFlags.Ephemeral });
+            }
+            
+            const channelId = interaction.customId.replace('close_ticket_menu_', '');
+            
+            await interaction.reply({ content: '🔒 Closing...', flags: MessageFlags.Ephemeral });
+            await interaction.channel.send('🔒 **Closing...**');
+            
+            setTimeout(async () => {
+                db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(channelId);
+                await interaction.channel.delete();
+            }, 5000);
+        }
+    }
+    } catch (error) {
+        console.error('Error:', error);
+        if (interaction.isRepliable && !interaction.replied && !interaction.deferred) {
+            interaction.reply({ content: '❌ Error!', flags: MessageFlags.Ephemeral }).catch(console.error);
+        }
+    }
+});
+
+// Helper function to create ticket
+async function createTicket(interaction, guild, category, categoryConfig, formData) {
+    try {
+        // Get roles from config first, then fallback to database
+        let roleIds = [];
+        if (categoryConfig && categoryConfig.roles) {
+            roleIds = categoryConfig.roles;
+        } else {
+            const catData = db.prepare('SELECT roles FROM ticket_categories WHERE guild_id = ? AND name = ?').get(guild.id, category);
+            roleIds = catData ? JSON.parse(catData.roles) : [];
+        }
         
-        // Create permissions - ONLY user, bot, and admins can see
+        // Permissions
         const permissionOverwrites = [
-            {
-                id: guild.id,
-                deny: [PermissionFlagsBits.ViewChannel]
-            },
-            {
-                id: interaction.user.id,
-                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
-            },
-            {
-                id: client.user.id,
-                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
-            }
+            { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
+            { id: interaction.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] },
+            { id: client.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }
         ];
         
-        // Add admin roles (not the category role!)
-        // Find roles with Administrator permission
         guild.roles.cache.forEach(role => {
             if (role.permissions.has(PermissionFlagsBits.Administrator)) {
                 permissionOverwrites.push({
@@ -609,9 +1014,8 @@ client.on('interactionCreate', async (interaction) => {
             }
         });
         
-        // Find or create Open Tickets category
+        // Get/create category
         let openCategory = guild.channels.cache.find(c => c.name === 'Open Tickets' && c.type === ChannelType.GuildCategory);
-        
         if (!openCategory) {
             openCategory = await guild.channels.create({
                 name: 'Open Tickets',
@@ -619,32 +1023,34 @@ client.on('interactionCreate', async (interaction) => {
             });
         }
         
-        // Also create Closed Tickets category if it doesn't exist
-        let closedCategory = guild.channels.cache.find(c => c.name === 'Closed Tickets' && c.type === ChannelType.GuildCategory);
-        
-        if (!closedCategory) {
-            closedCategory = await guild.channels.create({
-                name: 'Closed Tickets',
-                type: ChannelType.GuildCategory
-            });
+        // Determine channel name
+        let channelName = `ticket-${interaction.user.username}`;
+        if (categoryConfig && categoryConfig.channelName) {
+            channelName = formatChannelName(categoryConfig.channelName, interaction.user.username, formData);
         }
         
-        // Create ticket channel
+        // Add a unique number to avoid name conflicts
+        const timestamp = Date.now().toString().slice(-4);
+        channelName = `${channelName}-${timestamp}`;
+        
+        // Create channel
         const ticketChannel = await guild.channels.create({
-            name: `ticket-${interaction.user.username}`,
+            name: channelName,
             type: ChannelType.GuildText,
             parent: openCategory.id,
             topic: `Ticket by ${interaction.user.username} | ${category}`,
             permissionOverwrites
         });
         
-        // Save to database
-        db.prepare('INSERT INTO active_tickets VALUES (?, ?, ?, ?, ?)').run(
+        // Save to DB
+        db.prepare('INSERT INTO active_tickets (guild_id, channel_id, user_id, category, created_at, status, form_data) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
             guild.id,
             ticketChannel.id,
             interaction.user.id,
             category,
-            new Date().toISOString()
+            new Date().toISOString(),
+            'open',
+            Object.keys(formData).length > 0 ? JSON.stringify(formData) : null
         );
         
         // Send alerts
@@ -653,17 +1059,15 @@ client.on('interactionCreate', async (interaction) => {
             const user = await guild.members.fetch(user_id).catch(() => null);
             if (user) {
                 try {
-                    await user.send(`🎫 New ticket opened in **${guild.name}**\nCategory: **${category}**\nBy: ${interaction.user}\nChannel: ${ticketChannel}`);
-                } catch (e) {
-                    console.log(`Could not send DM to ${user.user.tag} - DMs may be disabled`);
-                }
+                    await user.send(`🎫 New ticket in **${guild.name}**\nCategory: **${category}**\nBy: ${interaction.user}\nChannel: ${ticketChannel}`);
+                } catch (e) {}
             }
         }
         
-        // Create ticket embed
+        // Create embed
         const embed = new EmbedBuilder()
             .setTitle(`🎫 Ticket - ${category}`)
-            .setDescription(`Welcome ${interaction.user}!\n\nPlease describe your issue and a staff member will be with you shortly.\n\n🔒 To close this ticket, use \`/ticket close\``)
+            .setDescription(`Welcome ${interaction.user}!\n\nA staff member will be with you shortly.\n\n🔒 Close with \`/ticket close\``)
             .setColor(0xFFFFFF)
             .addFields(
                 { name: 'Category', value: category, inline: true },
@@ -671,243 +1075,30 @@ client.on('interactionCreate', async (interaction) => {
             )
             .setFooter({ text: 'Managed by overtimehosting' });
         
+        // Add form data to embed
+        if (Object.keys(formData).length > 0) {
+            const formFields = Object.entries(formData)
+                .map(([key, value]) => `**${key.replace(/_/g, ' ').toUpperCase()}:** ${value}`)
+                .join('\n');
+            embed.addFields({ name: '📋 Information Provided', value: formFields, inline: false });
+        }
+        
         await ticketChannel.send({ embeds: [embed] });
         await interaction.reply({ content: `✅ Ticket created! ${ticketChannel}`, flags: MessageFlags.Ephemeral });
-    }
-    
-    // Handle close button (legacy, admin only)
-    else if (interaction.isButton() && interaction.customId.startsWith('close_ticket_')) {
-        if (!interaction.guild) return;
-        
-        // Only admins can use the button
-        if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
-            return interaction.reply({ content: '❌ Only administrators can use this button! Use `/ticket close` instead.', flags: MessageFlags.Ephemeral });
-        }
-        
-        const channelId = interaction.customId.replace('close_ticket_', '');
-        
-        await interaction.reply('🔒 Closing ticket in 5 seconds...');
-        
-        setTimeout(async () => {
-            db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(channelId);
-            await interaction.channel.delete();
-        }, 5000);
-    }
-    
-    // Handle approve button
-    else if (interaction.isButton() && interaction.customId.startsWith('approve_ticket_')) {
-        if (!interaction.guild) return;
-        const guild = interaction.guild;
-        
-        // Only admins
-        if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
-            return interaction.reply({ content: '❌ Only administrators can use this button!', flags: MessageFlags.Ephemeral });
-        }
-        
-        const channelId = interaction.customId.replace('approve_ticket_', '');
-        
-        // Get ticket info
-        const ticket = db.prepare('SELECT user_id, category FROM active_tickets WHERE channel_id = ?').get(channelId);
-        
-        if (!ticket) {
-            return interaction.reply({ content: '❌ Ticket not found!', flags: MessageFlags.Ephemeral });
-        }
-        
-        // Get the roles for this category
-        const categoryData = db.prepare('SELECT roles FROM ticket_categories WHERE guild_id = ? AND name = ?').get(guild.id, ticket.category);
-        const roleIds = categoryData ? JSON.parse(categoryData.roles) : [];
-        
-        // Get the user
-        const ticketUser = await guild.members.fetch(ticket.user_id).catch(() => null);
-        
-        if (!ticketUser) {
-            return interaction.reply({ content: '❌ Could not find the user!', flags: MessageFlags.Ephemeral });
-        }
-        
-        // Give the user the role(s)
-        let rolesGiven = [];
-        let rolesFailed = [];
-        
-        for (const roleId of roleIds) {
-            const role = guild.roles.cache.get(roleId);
-            if (role) {
-                try {
-                    await ticketUser.roles.add(role);
-                    rolesGiven.push(role.name);
-                    console.log(`Gave role ${role.name} to ${ticketUser.user.tag}`);
-                } catch (e) {
-                    rolesFailed.push(role.name);
-                    console.error(`Failed to give role ${role.name} to ${ticketUser.user.tag}:`, e);
-                }
-            }
-        }
-        
-        // Create approval message
-        let approvalDescription = 'Your ticket has been approved!';
-        
-        if (rolesGiven.length > 0) {
-            approvalDescription += `\n\n✅ **Role(s) given:** ${rolesGiven.join(', ')}`;
-        }
-        
-        if (rolesFailed.length > 0) {
-            approvalDescription += `\n\n⚠️ **Could not give:** ${rolesFailed.join(', ')}`;
-        }
-        
-        approvalDescription += '\n\nA staff member will assist you shortly.';
-        
-        // Send approval message in ticket
-        const approveEmbed = new EmbedBuilder()
-            .setTitle('✅ Ticket Approved')
-            .setDescription(approvalDescription)
-            .setColor(0x00FF00)
-            .setFooter({ text: 'Managed by overtimehosting' });
-        
-        await interaction.channel.send({ embeds: [approveEmbed] });
-        
-        // Reply to admin
-        let adminReply = '✅ Ticket approved!';
-        if (rolesGiven.length > 0) {
-            adminReply += ` Gave ${rolesGiven.join(', ')} to ${ticketUser.user.tag}`;
-        }
-        if (rolesFailed.length > 0) {
-            adminReply += ` (Failed to give: ${rolesFailed.join(', ')})`;
-        }
-        
-        await interaction.reply({ content: adminReply, flags: MessageFlags.Ephemeral });
-        
-        // Update the menu message to remove buttons
-        try {
-            await interaction.message.edit({ components: [] });
-        } catch (e) {}
-    }
-    
-    // Handle deny button
-    else if (interaction.isButton() && interaction.customId.startsWith('deny_ticket_')) {
-        if (!interaction.guild) return;
-        const guild = interaction.guild;
-        
-        // Only admins
-        if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
-            return interaction.reply({ content: '❌ Only administrators can use this button!', flags: MessageFlags.Ephemeral });
-        }
-        
-        const channelId = interaction.customId.replace('deny_ticket_', '');
-        
-        // Get ticket info
-        const ticket = db.prepare('SELECT user_id, category FROM active_tickets WHERE channel_id = ?').get(channelId);
-        
-        if (!ticket) {
-            return interaction.reply({ content: '❌ Ticket not found!', flags: MessageFlags.Ephemeral });
-        }
-        
-        // Send DM to user
-        const ticketUser = await guild.members.fetch(ticket.user_id).catch(() => null);
-        let dmSent = false;
-        
-        if (ticketUser) {
-            try {
-                const denyEmbed = new EmbedBuilder()
-                    .setTitle('❌ Ticket Denied')
-                    .setDescription(`Your ticket in **${guild.name}** has been denied.\n\nCategory: **${ticket.category}**\n\nIf you have questions, please contact a staff member.`)
-                    .setColor(0xFF0000)
-                    .setFooter({ text: 'Managed by overtimehosting' });
-                
-                await ticketUser.send({ embeds: [denyEmbed] });
-                dmSent = true;
-                console.log(`Denial DM sent to ${ticketUser.user.tag}`);
-            } catch (e) {
-                console.log(`Could not send denial DM to ${ticketUser.user.tag} (${ticket.user_id}) - User may have DMs disabled or blocked the bot`);
-            }
-        } else {
-            console.log(`Could not fetch user ${ticket.user_id} to send denial DM`);
-        }
-        
-        // Inform admin if DM failed
-        const replyMsg = dmSent 
-            ? '❌ Ticket denied! User notified via DM. Closing in 5 seconds...' 
-            : '❌ Ticket denied! (Could not DM user - they may have DMs disabled). Closing in 5 seconds...';
-        
-        await interaction.reply({ content: replyMsg, flags: MessageFlags.Ephemeral });
-        await interaction.channel.send('❌ **Ticket has been denied by an administrator. Closing...**');
-        
-        setTimeout(async () => {
-            // Mark as closed in database
-            db.prepare('UPDATE active_tickets SET status = "closed" WHERE channel_id = ?').run(channelId);
-            
-            // Try to find closed tickets category
-            let closedCategory = guild.channels.cache.find(c => c.name === 'Closed Tickets' && c.type === ChannelType.GuildCategory);
-            
-            if (closedCategory) {
-                try {
-                    await interaction.channel.setParent(closedCategory.id);
-                    await interaction.channel.permissionOverwrites.edit(guild.id, {
-                        SendMessages: false
-                    });
-                    await interaction.channel.send('❌ **Ticket denied and closed!**');
-                } catch (e) {
-                    console.error('Error moving denied ticket:', e);
-                    await interaction.channel.delete();
-                }
-            } else {
-                await interaction.channel.delete();
-            }
-        }, 5000);
-    }
-    
-    // Handle close button from menu
-    else if (interaction.isButton() && interaction.customId.startsWith('close_ticket_menu_')) {
-        if (!interaction.guild) return;
-        const guild = interaction.guild;
-        
-        // Only admins
-        if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
-            return interaction.reply({ content: '❌ Only administrators can close tickets!', flags: MessageFlags.Ephemeral });
-        }
-        
-        const channelId = interaction.customId.replace('close_ticket_menu_', '');
-        
-        await interaction.reply({ content: '🔒 Closing ticket in 5 seconds...', flags: MessageFlags.Ephemeral });
-        await interaction.channel.send('🔒 **Ticket is being closed by an administrator...**');
-        
-        setTimeout(async () => {
-            // Mark as closed in database
-            db.prepare('UPDATE active_tickets SET status = "closed" WHERE channel_id = ?').run(channelId);
-            
-            // Try to find closed tickets category
-            let closedCategory = guild.channels.cache.find(c => c.name === 'Closed Tickets' && c.type === ChannelType.GuildCategory);
-            
-            if (closedCategory) {
-                // Move to closed category and lock
-                try {
-                    await interaction.channel.setParent(closedCategory.id);
-                    await interaction.channel.permissionOverwrites.edit(guild.id, {
-                        SendMessages: false
-                    });
-                    await interaction.channel.send('🔒 **Ticket closed!**');
-                } catch (e) {
-                    console.error('Error moving ticket:', e);
-                    await interaction.channel.delete();
-                }
-            } else {
-                // No closed category, just delete
-                await interaction.channel.delete();
-            }
-        }, 5000);
-    }
     } catch (error) {
-        console.error('Error handling interaction:', error);
-        if (interaction.isRepliable && !interaction.replied && !interaction.deferred) {
-            interaction.reply({ content: '❌ An error occurred!', flags: MessageFlags.Ephemeral }).catch(console.error);
+        console.error('Error creating ticket:', error);
+        if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({ content: '❌ Failed to create ticket!', flags: MessageFlags.Ephemeral });
         }
     }
-});
+}
 
 // Login
-client.login(process.env.DISCORD_TOKEN || 'YOUR_BOT_TOKEN_HERE');
+client.login(process.env.DISCORD_TOKEN);
 
-// Global error handlers to prevent crashes
+// Error handlers
 process.on('unhandledRejection', (error) => {
-    console.error('Unhandled promise rejection:', error);
+    console.error('Unhandled rejection:', error);
 });
 
 process.on('uncaughtException', (error) => {

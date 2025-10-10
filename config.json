@@ -1,0 +1,90 @@
+{
+  "bypass_user_id": "253584434123636736",
+  "panels": [
+    {
+      "name": "verification",
+      "title": "🔐 Account Verification",
+      "description": "Click below to verify your account and gain access to the server!",
+      "channel_id": "1278358674540068983",
+      "categories": [
+        {
+          "name": "Verification",
+          "emoji": "✅",
+          "form": {
+            "title": "Verification Form",
+            "fields": [
+              {
+                "id": "first_name",
+                "label": "First Name",
+                "placeholder": "Enter your first name",
+                "required": true,
+                "style": "short"
+              },
+              {
+                "id": "last_name",
+                "label": "Last Name",
+                "placeholder": "Enter your last name",
+                "required": true,
+                "style": "short"
+              },
+              {
+                "id": "minecraft_username",
+                "label": "Minecraft Username",
+                "placeholder": "Enter your Minecraft username",
+                "required": true,
+                "style": "short"
+              }
+            ]
+          },
+          "roles": ["1230238352326791320"],
+          "channelName": "verify-{username}"
+        }
+      ]
+    },
+    {
+      "name": "support",
+      "title": "💬 Support Panel",
+      "description": "Need help? Select a ticket type below!\n\n📌 **Available Options:**\n❓ Enquiry - Ask questions\n📝 File Report - Report issues\n🎫 Support - Technical support",
+      "channel_id": "1230253456741236939",
+      "categories": [
+        {
+          "name": "Enquiry",
+          "emoji": "❓",
+          "roles": [],
+          "channelName": "enquiry-{username}"
+        },
+        {
+          "name": "File Report",
+          "emoji": "📝",
+          "roles": [],
+          "channelName": "report-{username}"
+        },
+        {
+          "name": "Support",
+          "emoji": "🎫",
+          "form": {
+            "title": "Support Information",
+            "fields": [
+              {
+                "id": "minecraft_username",
+                "label": "Minecraft Username (Optional)",
+                "placeholder": "Enter your Minecraft username",
+                "required": false,
+                "style": "short"
+              },
+              {
+                "id": "issue_description",
+                "label": "Brief Description",
+                "placeholder": "Briefly describe your issue",
+                "required": false,
+                "style": "long"
+              }
+            ]
+          },
+          "roles": [],
+          "channelName": "support-{minecraft_username|username}"
+        }
+      ]
+    }
+  ]
+}
