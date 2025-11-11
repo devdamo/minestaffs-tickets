@@ -1,8 +1,7 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, ChannelType, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
-const Database = require('better-sqlite3');
 const fs = require('fs');
-const db = new Database('tickets.db');
+const { db, initDatabase } = require('./database');
 
 // Load config
 let config = { panels: [], bypass_user_id: null };
@@ -21,73 +20,14 @@ try {
 }
 
 // Initialize database
-db.exec(`
-    CREATE TABLE IF NOT EXISTS ticket_categories (
-        guild_id TEXT,
-        name TEXT,
-        roles TEXT
-    );
-    
-    CREATE TABLE IF NOT EXISTS ticket_panels (
-        guild_id TEXT,
-        channel_id TEXT,
-        message_id TEXT,
-        title TEXT,
-        description TEXT,
-        categories TEXT
-    );
-    
-    CREATE TABLE IF NOT EXISTS active_tickets (
-        guild_id TEXT,
-        channel_id TEXT,
-        user_id TEXT,
-        category TEXT,
-        created_at TEXT
-    );
-    
-    CREATE TABLE IF NOT EXISTS ticket_alerts (
-        guild_id TEXT,
-        user_id TEXT
-    );
-`);
-
-// Migrate database - add new columns if they don't exist
-try {
-    // Check and add config_name to ticket_panels
-    const panelsInfo = db.pragma('table_info(ticket_panels)');
-    const hasConfigName = panelsInfo.some(col => col.name === 'config_name');
-    
-    if (!hasConfigName) {
-        console.log('🔄 Adding config_name column to ticket_panels...');
-        db.exec('ALTER TABLE ticket_panels ADD COLUMN config_name TEXT');
-        console.log('✅ Added config_name column!');
+(async () => {
+    try {
+        await initDatabase();
+    } catch (error) {
+        console.error('❌ Failed to initialize database:', error);
+        process.exit(1);
     }
-    
-    // Check and add status to active_tickets
-    const ticketsInfo = db.pragma('table_info(active_tickets)');
-    const hasStatus = ticketsInfo.some(col => col.name === 'status');
-    
-    if (!hasStatus) {
-        console.log('🔄 Adding status column to active_tickets...');
-        db.exec('ALTER TABLE active_tickets ADD COLUMN status TEXT DEFAULT "open"');
-        // Update existing rows to have 'open' status
-        db.exec('UPDATE active_tickets SET status = "open" WHERE status IS NULL');
-        console.log('✅ Added status column!');
-    }
-    
-    // Check and add form_data to active_tickets
-    const hasFormData = ticketsInfo.some(col => col.name === 'form_data');
-    
-    if (!hasFormData) {
-        console.log('🔄 Adding form_data column to active_tickets...');
-        db.exec('ALTER TABLE active_tickets ADD COLUMN form_data TEXT');
-        console.log('✅ Added form_data column!');
-    }
-    
-    console.log('✅ Database migration complete!');
-} catch (error) {
-    console.error('❌ Database migration error:', error);
-}
+})();
 
 const client = new Client({
     intents: [
@@ -114,13 +54,110 @@ function hasAdminOrBypass(interaction) {
     return false;
 }
 
+// Sync existing ticket channels on startup
+async function syncExistingTickets() {
+    console.log('🔄 Syncing existing ticket channels...');
+
+    for (const [guildId, guild] of client.guilds.cache) {
+        try {
+            // Get all channels in the guild
+            const channels = await guild.channels.fetch();
+
+            // Get existing tickets from database
+            const existingTickets = await db.prepare('SELECT channel_id FROM active_tickets WHERE guild_id = ?').all(guildId);
+            const existingChannelIds = new Set(existingTickets.map(t => t.channel_id));
+
+            let syncedCount = 0;
+
+            for (const [channelId, channel] of channels) {
+                // Skip if already in database
+                if (existingChannelIds.has(channelId)) continue;
+
+                // Skip if not a text channel
+                if (channel.type !== ChannelType.GuildText) continue;
+
+                // Check if channel is in "Open Tickets" category
+                const isInTicketCategory = channel.parent && channel.parent.name === 'Open Tickets';
+
+                // Check if channel name matches ticket pattern (ticket-, verify-, or ends with username pattern)
+                const ticketNamePattern = /^(ticket|verify|support|help)-/i;
+                const matchesPattern = ticketNamePattern.test(channel.name);
+
+                if (isInTicketCategory || matchesPattern) {
+                    // Try to extract user info from channel topic or permissions
+                    let userId = null;
+                    let category = 'Unknown';
+
+                    // Check channel topic for user info
+                    if (channel.topic) {
+                        const topicMatch = channel.topic.match(/Ticket by .+ \| (.+)/);
+                        if (topicMatch) {
+                            category = topicMatch[1];
+                        }
+                    }
+
+                    // Try to detect category from channel name
+                    if (category === 'Unknown') {
+                        if (channel.name.startsWith('verify-')) {
+                            category = 'Verification';
+                        } else if (channel.name.startsWith('enquiry-')) {
+                            category = 'Enquiry';
+                        } else if (channel.name.startsWith('report-')) {
+                            category = 'File Report';
+                        } else if (channel.name.startsWith('support-')) {
+                            category = 'Support';
+                        }
+                    }
+
+                    // Find the user by checking channel permissions (who has view access besides admins and bot)
+                    const permissions = channel.permissionOverwrites.cache;
+                    for (const [id, permission] of permissions) {
+                        // Check if this is a user permission (not a role, not the bot)
+                        const member = await guild.members.fetch(id).catch(() => null);
+                        if (member && !member.user.bot && permission.allow.has(PermissionFlagsBits.ViewChannel)) {
+                            userId = id;
+                            break;
+                        }
+                    }
+
+                    // If we found a user, sync the ticket
+                    if (userId) {
+                        await db.prepare('INSERT INTO active_tickets (guild_id, channel_id, user_id, category, created_at, status, form_data) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+                            guildId,
+                            channelId,
+                            userId,
+                            category,
+                            new Date().toISOString(),
+                            'open',
+                            null
+                        );
+                        syncedCount++;
+                        console.log(`  ✅ Synced ticket: ${channel.name} (Category: ${category}, User: ${userId})`);
+                    }
+                }
+            }
+
+            if (syncedCount > 0) {
+                console.log(`✅ Synced ${syncedCount} existing ticket(s) in ${guild.name}`);
+            } else {
+                console.log(`✅ No new tickets to sync in ${guild.name}`);
+            }
+        } catch (error) {
+            console.error(`❌ Error syncing tickets in guild ${guildId}:`, error);
+        }
+    }
+}
+
 client.once('clientReady', async () => {
     console.log(`Logged in as ${client.user.tag}`);
     console.log(`Bot is in ${client.guilds.cache.size} server(s):`);
     client.guilds.cache.forEach(guild => {
         console.log(`  - ${guild.name} (${guild.id})`);
     });
-    
+
+    // Sync existing tickets
+    await syncExistingTickets();
+
     // Register slash commands
     const commands = [
         {
@@ -235,6 +272,11 @@ client.once('clientReady', async () => {
                 {
                     name: 'menu',
                     description: 'Show ticket info and actions',
+                    type: 1
+                },
+                {
+                    name: 'sync',
+                    description: 'Sync existing ticket channels to database',
                     type: 1
                 }
             ]
@@ -355,7 +397,7 @@ client.on('interactionCreate', async (interaction) => {
             const subcommand = options.getSubcommand();
             
             // Check permissions (admin or bypass user)
-            const needsAdmin = ['deploy', 'cleanup', 'setup', 'refresh', 'panel', 'create', 'list', 'categories', 'alerts', 'menu'];
+            const needsAdmin = ['deploy', 'cleanup', 'setup', 'refresh', 'panel', 'create', 'list', 'categories', 'alerts', 'menu', 'sync'];
             if (needsAdmin.includes(subcommand) && !hasAdminOrBypass(interaction)) {
                 return interaction.reply({ content: '❌ You need Administrator permission or be the bypass user!', flags: MessageFlags.Ephemeral });
             }
@@ -401,9 +443,9 @@ client.on('interactionCreate', async (interaction) => {
                         
                         const row = new ActionRowBuilder().addComponents(selectMenu);
                         const panelMsg = await channel.send({ embeds: [embed], components: [row] });
-                        
+
                         // Save to database (with 7 columns now)
-                        db.prepare('INSERT INTO ticket_panels (guild_id, channel_id, message_id, title, description, categories, config_name) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+                        await db.prepare('INSERT INTO ticket_panels (guild_id, channel_id, message_id, title, description, categories, config_name) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
                             guild.id,
                             channel.id,
                             panelMsg.id,
@@ -481,9 +523,9 @@ client.on('interactionCreate', async (interaction) => {
                 
                 const row = new ActionRowBuilder().addComponents(selectMenu);
                 const panelMsg = await channel.send({ embeds: [embed], components: [row] });
-                
+
                 // Save to database
-                db.prepare('INSERT INTO ticket_panels (guild_id, channel_id, message_id, title, description, categories, config_name) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+                await db.prepare('INSERT INTO ticket_panels (guild_id, channel_id, message_id, title, description, categories, config_name) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
                     guild.id,
                     channel.id,
                     panelMsg.id,
@@ -500,7 +542,7 @@ client.on('interactionCreate', async (interaction) => {
             }
             
             else if (subcommand === 'refresh') {
-                const panels = db.prepare('SELECT * FROM ticket_panels WHERE guild_id = ?').all(guild.id);
+                const panels = await db.prepare('SELECT * FROM ticket_panels WHERE guild_id = ?').all(guild.id);
                 
                 if (panels.length === 0) {
                     return interaction.reply({ content: '❌ No panels found!', flags: MessageFlags.Ephemeral });
@@ -576,7 +618,7 @@ client.on('interactionCreate', async (interaction) => {
                 }
                 
                 const channel = await guild.channels.fetch(channelOption.id);
-                const allCategories = db.prepare('SELECT name FROM ticket_categories WHERE guild_id = ?').all(guild.id);
+                const allCategories = await db.prepare('SELECT name FROM ticket_categories WHERE guild_id = ?').all(guild.id);
                 const availableCategoryNames = allCategories.map(c => c.name);
                 
                 if (allCategories.length === 0) {
@@ -616,8 +658,8 @@ client.on('interactionCreate', async (interaction) => {
                 
                 const row = new ActionRowBuilder().addComponents(selectMenu);
                 const panelMsg = await channel.send({ embeds: [embed], components: [row] });
-                
-                db.prepare('INSERT INTO ticket_panels (guild_id, channel_id, message_id, title, description, categories, config_name) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+
+                await db.prepare('INSERT INTO ticket_panels (guild_id, channel_id, message_id, title, description, categories, config_name) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
                     guild.id,
                     channel.id,
                     panelMsg.id,
@@ -636,21 +678,21 @@ client.on('interactionCreate', async (interaction) => {
             else if (subcommand === 'create') {
                 const title = options.getString('title');
                 const role = options.getRole('role');
-                
-                const exists = db.prepare('SELECT name FROM ticket_categories WHERE guild_id = ? AND name = ?').get(guild.id, title);
+
+                const exists = await db.prepare('SELECT name FROM ticket_categories WHERE guild_id = ? AND name = ?').get(guild.id, title);
                 if (exists) {
                     return interaction.reply({ content: `❌ Category **${title}** already exists!`, flags: MessageFlags.Ephemeral });
                 }
-                
+
                 const roles = role ? JSON.stringify([role.id]) : JSON.stringify([]);
-                db.prepare('INSERT INTO ticket_categories VALUES (?, ?, ?)').run(guild.id, title, roles);
+                await db.prepare('INSERT INTO ticket_categories (guild_id, name, roles) VALUES (?, ?, ?)').run(guild.id, title, roles);
                 
                 const roleText = role ? ` (Role: ${role})` : '';
                 await interaction.reply({ content: `✅ Created category: **${title}**${roleText}`, flags: MessageFlags.Ephemeral });
             }
             
             else if (subcommand === 'list') {
-                const tickets = db.prepare('SELECT channel_id, user_id, category, created_at FROM active_tickets WHERE guild_id = ? AND (status = "open" OR status IS NULL)').all(guild.id);
+                const tickets = await db.prepare('SELECT channel_id, user_id, category, created_at FROM active_tickets WHERE guild_id = ? AND (status = "open" OR status IS NULL)').all(guild.id);
                 
                 if (tickets.length === 0) {
                     return interaction.reply({ content: '📋 No active tickets!', flags: MessageFlags.Ephemeral });
@@ -676,19 +718,19 @@ client.on('interactionCreate', async (interaction) => {
             }
             
             else if (subcommand === 'alerts') {
-                const exists = db.prepare('SELECT user_id FROM ticket_alerts WHERE guild_id = ? AND user_id = ?').get(guild.id, interaction.user.id);
-                
+                const exists = await db.prepare('SELECT user_id FROM ticket_alerts WHERE guild_id = ? AND user_id = ?').get(guild.id, interaction.user.id);
+
                 if (exists) {
-                    db.prepare('DELETE FROM ticket_alerts WHERE guild_id = ? AND user_id = ?').run(guild.id, interaction.user.id);
+                    await db.prepare('DELETE FROM ticket_alerts WHERE guild_id = ? AND user_id = ?').run(guild.id, interaction.user.id);
                     await interaction.reply({ content: '🔕 Alerts disabled', flags: MessageFlags.Ephemeral });
                 } else {
-                    db.prepare('INSERT INTO ticket_alerts VALUES (?, ?)').run(guild.id, interaction.user.id);
+                    await db.prepare('INSERT INTO ticket_alerts (guild_id, user_id) VALUES (?, ?)').run(guild.id, interaction.user.id);
                     await interaction.reply({ content: '🔔 Alerts enabled!', flags: MessageFlags.Ephemeral });
                 }
             }
             
             else if (subcommand === 'categories') {
-                const categories = db.prepare('SELECT name, roles FROM ticket_categories WHERE guild_id = ?').all(guild.id);
+                const categories = await db.prepare('SELECT name, roles FROM ticket_categories WHERE guild_id = ?').all(guild.id);
                 
                 if (categories.length === 0) {
                     return interaction.reply({ content: '📋 No categories found!', flags: MessageFlags.Ephemeral });
@@ -722,8 +764,8 @@ client.on('interactionCreate', async (interaction) => {
                 if (isFromDM) {
                     return interaction.reply({ content: '❌ Cannot close tickets from DMs!', flags: MessageFlags.Ephemeral });
                 }
-                
-                const ticket = db.prepare('SELECT user_id, category FROM active_tickets WHERE channel_id = ?').get(interaction.channelId);
+
+                const ticket = await db.prepare('SELECT user_id, category FROM active_tickets WHERE channel_id = ?').get(interaction.channelId);
                 
                 if (!ticket) {
                     return interaction.reply({ content: '❌ Not a ticket channel!', flags: MessageFlags.Ephemeral });
@@ -735,21 +777,24 @@ client.on('interactionCreate', async (interaction) => {
                 if (!isOwner && !isAdmin) {
                     return interaction.reply({ content: '❌ You can only close your own tickets!', flags: MessageFlags.Ephemeral });
                 }
-                
-                await interaction.reply('🔒 Closing in 5 seconds...');
-                
-                setTimeout(async () => {
-                    db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(interaction.channelId);
-                    await interaction.channel.delete();
-                }, 5000);
+
+                await interaction.reply('🔒 Closing ticket...');
+                await db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(interaction.channelId);
+                await interaction.channel.delete();
             }
             
+            else if (subcommand === 'sync') {
+                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                await syncExistingTickets();
+                await interaction.editReply({ content: '✅ Ticket sync complete! Check console for details.' });
+            }
+
             else if (subcommand === 'menu') {
                 if (isFromDM) {
                     return interaction.reply({ content: '❌ Cannot use menu from DMs!', flags: MessageFlags.Ephemeral });
                 }
-                
-                const ticket = db.prepare('SELECT user_id, category, status, form_data FROM active_tickets WHERE channel_id = ?').get(interaction.channelId);
+
+                const ticket = await db.prepare('SELECT user_id, category, status, form_data FROM active_tickets WHERE channel_id = ?').get(interaction.channelId);
                 
                 if (!ticket) {
                     return interaction.reply({ content: '❌ Not a ticket channel!', flags: MessageFlags.Ephemeral });
@@ -757,9 +802,29 @@ client.on('interactionCreate', async (interaction) => {
                 
                 const ticketUser = await guild.members.fetch(ticket.user_id).catch(() => null);
                 const userName = ticketUser ? ticketUser.user.tag : `Unknown (${ticket.user_id})`;
-                
-                const categoryData = db.prepare('SELECT roles FROM ticket_categories WHERE guild_id = ? AND name = ?').get(guild.id, ticket.category);
-                const hasRoles = categoryData && JSON.parse(categoryData.roles).length > 0;
+
+                // Check if category has roles - first check config, then database
+                let hasRoles = false;
+                let roleIds = [];
+
+                // Check all panel configs for this category
+                for (const panel of config.panels) {
+                    const categoryConfig = panel.categories.find(c => c.name === ticket.category);
+                    if (categoryConfig && categoryConfig.roles && categoryConfig.roles.length > 0) {
+                        hasRoles = true;
+                        roleIds = categoryConfig.roles;
+                        break;
+                    }
+                }
+
+                // Fallback to database if not found in config
+                if (!hasRoles) {
+                    const categoryData = await db.prepare('SELECT roles FROM ticket_categories WHERE guild_id = ? AND name = ?').get(guild.id, ticket.category);
+                    if (categoryData) {
+                        roleIds = JSON.parse(categoryData.roles);
+                        hasRoles = roleIds.length > 0;
+                    }
+                }
                 
                 const embed = new EmbedBuilder()
                     .setTitle('🎫 Ticket Information')
@@ -817,26 +882,24 @@ client.on('interactionCreate', async (interaction) => {
         }
     }
     
-    // Handle dropdown - REMOVED RESTRICTION - Multi-use enabled!
+    // Handle dropdown - Multi-use enabled!
     else if (interaction.isStringSelectMenu() && interaction.customId.startsWith('ticket_dropdown')) {
         if (!interaction.guild) return;
         const guild = interaction.guild;
-        
+
         const category = interaction.values[0];
-        
+
         // Extract panel name if it's a config-based dropdown
         const panelName = interaction.customId.replace('ticket_dropdown_', '') || null;
         const categoryConfig = panelName ? getCategoryConfig(panelName, category) : null;
-        
-        // NO RESTRICTION - Users can create unlimited tickets!
-        
+
         // Check if category needs a form
         if (categoryConfig && categoryConfig.form) {
-            // Show modal
+            // Show modal (modals handle their own interaction response)
             const modal = new ModalBuilder()
                 .setCustomId(`ticket_form_${panelName}_${category}`)
                 .setTitle(categoryConfig.form.title);
-            
+
             const rows = [];
             for (const field of categoryConfig.form.fields) {
                 const textInput = new TextInputBuilder()
@@ -845,13 +908,15 @@ client.on('interactionCreate', async (interaction) => {
                     .setStyle(field.style === 'long' ? TextInputStyle.Paragraph : TextInputStyle.Short)
                     .setPlaceholder(field.placeholder || '')
                     .setRequired(field.required !== false);
-                
+
                 rows.push(new ActionRowBuilder().addComponents(textInput));
             }
-            
+
             modal.addComponents(...rows.slice(0, 5)); // Discord limit: 5 components
             await interaction.showModal(modal);
         } else {
+            // Defer reply so dropdown stays usable
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             // Create ticket without form
             await createTicket(interaction, guild, category, categoryConfig, {});
         }
@@ -861,13 +926,16 @@ client.on('interactionCreate', async (interaction) => {
     else if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_form_')) {
         if (!interaction.guild) return;
         const guild = interaction.guild;
-        
+
+        // Defer reply immediately for modal
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
         const parts = interaction.customId.split('_');
         const panelName = parts[2];
         const category = parts.slice(3).join('_');
-        
+
         const categoryConfig = getCategoryConfig(panelName, category);
-        
+
         // Collect form data
         const formData = {};
         if (categoryConfig && categoryConfig.form) {
@@ -882,7 +950,7 @@ client.on('interactionCreate', async (interaction) => {
                 }
             }
         }
-        
+
         await createTicket(interaction, guild, category, categoryConfig, formData);
     }
     
@@ -895,16 +963,30 @@ client.on('interactionCreate', async (interaction) => {
             if (!hasAdminOrBypass(interaction)) {
                 return interaction.reply({ content: '❌ Admin only!', flags: MessageFlags.Ephemeral });
             }
-            
+
             const channelId = interaction.customId.replace('approve_ticket_', '');
-            const ticket = db.prepare('SELECT user_id, category FROM active_tickets WHERE channel_id = ?').get(channelId);
-            
+            const ticket = await db.prepare('SELECT user_id, category FROM active_tickets WHERE channel_id = ?').get(channelId);
+
             if (!ticket) {
                 return interaction.reply({ content: '❌ Ticket not found!', flags: MessageFlags.Ephemeral });
             }
-            
-            const categoryData = db.prepare('SELECT roles FROM ticket_categories WHERE guild_id = ? AND name = ?').get(guild.id, ticket.category);
-            const roleIds = categoryData ? JSON.parse(categoryData.roles) : [];
+
+            // Get role IDs from config first, then fallback to database
+            let roleIds = [];
+            for (const panel of config.panels) {
+                const categoryConfig = panel.categories.find(c => c.name === ticket.category);
+                if (categoryConfig && categoryConfig.roles && categoryConfig.roles.length > 0) {
+                    roleIds = categoryConfig.roles;
+                    break;
+                }
+            }
+
+            // Fallback to database
+            if (roleIds.length === 0) {
+                const categoryData = await db.prepare('SELECT roles FROM ticket_categories WHERE guild_id = ? AND name = ?').get(guild.id, ticket.category);
+                roleIds = categoryData ? JSON.parse(categoryData.roles) : [];
+            }
+
             const ticketUser = await guild.members.fetch(ticket.user_id).catch(() => null);
             
             if (!ticketUser) {
@@ -940,9 +1022,9 @@ client.on('interactionCreate', async (interaction) => {
             if (!hasAdminOrBypass(interaction)) {
                 return interaction.reply({ content: '❌ Admin only!', flags: MessageFlags.Ephemeral });
             }
-            
+
             const channelId = interaction.customId.replace('deny_ticket_', '');
-            const ticket = db.prepare('SELECT user_id FROM active_tickets WHERE channel_id = ?').get(channelId);
+            const ticket = await db.prepare('SELECT user_id FROM active_tickets WHERE channel_id = ?').get(channelId);
             
             if (ticket) {
                 const ticketUser = await guild.members.fetch(ticket.user_id).catch(() => null);
@@ -955,27 +1037,21 @@ client.on('interactionCreate', async (interaction) => {
             
             await interaction.reply({ content: '❌ Denied! Closing...', flags: MessageFlags.Ephemeral });
             await interaction.channel.send('❌ **Ticket denied. Closing...**');
-            
-            setTimeout(async () => {
-                db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(channelId);
-                await interaction.channel.delete();
-            }, 5000);
+            await db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(channelId);
+            await interaction.channel.delete();
         }
         
         else if (interaction.customId.startsWith('close_ticket_menu_')) {
             if (!hasAdminOrBypass(interaction)) {
                 return interaction.reply({ content: '❌ Admin only!', flags: MessageFlags.Ephemeral });
             }
-            
+
             const channelId = interaction.customId.replace('close_ticket_menu_', '');
-            
+
             await interaction.reply({ content: '🔒 Closing...', flags: MessageFlags.Ephemeral });
             await interaction.channel.send('🔒 **Closing...**');
-            
-            setTimeout(async () => {
-                db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(channelId);
-                await interaction.channel.delete();
-            }, 5000);
+            await db.prepare('DELETE FROM active_tickets WHERE channel_id = ?').run(channelId);
+            await interaction.channel.delete();
         }
     }
     } catch (error) {
@@ -994,7 +1070,7 @@ async function createTicket(interaction, guild, category, categoryConfig, formDa
         if (categoryConfig && categoryConfig.roles) {
             roleIds = categoryConfig.roles;
         } else {
-            const catData = db.prepare('SELECT roles FROM ticket_categories WHERE guild_id = ? AND name = ?').get(guild.id, category);
+            const catData = await db.prepare('SELECT roles FROM ticket_categories WHERE guild_id = ? AND name = ?').get(guild.id, category);
             roleIds = catData ? JSON.parse(catData.roles) : [];
         }
         
@@ -1043,7 +1119,7 @@ async function createTicket(interaction, guild, category, categoryConfig, formDa
         });
         
         // Save to DB
-        db.prepare('INSERT INTO active_tickets (guild_id, channel_id, user_id, category, created_at, status, form_data) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+        await db.prepare('INSERT INTO active_tickets (guild_id, channel_id, user_id, category, created_at, status, form_data) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
             guild.id,
             ticketChannel.id,
             interaction.user.id,
@@ -1052,9 +1128,9 @@ async function createTicket(interaction, guild, category, categoryConfig, formDa
             'open',
             Object.keys(formData).length > 0 ? JSON.stringify(formData) : null
         );
-        
+
         // Send alerts
-        const alertUsers = db.prepare('SELECT user_id FROM ticket_alerts WHERE guild_id = ?').all(guild.id);
+        const alertUsers = await db.prepare('SELECT user_id FROM ticket_alerts WHERE guild_id = ?').all(guild.id);
         for (const { user_id } of alertUsers) {
             const user = await guild.members.fetch(user_id).catch(() => null);
             if (user) {
@@ -1084,11 +1160,19 @@ async function createTicket(interaction, guild, category, categoryConfig, formDa
         }
         
         await ticketChannel.send({ embeds: [embed] });
-        await interaction.reply({ content: `✅ Ticket created! ${ticketChannel}`, flags: MessageFlags.Ephemeral });
+
+        // Use editReply if deferred, otherwise reply
+        if (interaction.deferred) {
+            await interaction.editReply({ content: `✅ Ticket created! ${ticketChannel}` });
+        } else {
+            await interaction.reply({ content: `✅ Ticket created! ${ticketChannel}`, flags: MessageFlags.Ephemeral });
+        }
     } catch (error) {
         console.error('Error creating ticket:', error);
-        if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({ content: '❌ Failed to create ticket!', flags: MessageFlags.Ephemeral });
+        if (interaction.deferred) {
+            await interaction.editReply({ content: '❌ Failed to create ticket!' }).catch(() => {});
+        } else if (!interaction.replied) {
+            await interaction.reply({ content: '❌ Failed to create ticket!', flags: MessageFlags.Ephemeral }).catch(() => {});
         }
     }
 }

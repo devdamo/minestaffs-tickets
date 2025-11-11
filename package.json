@@ -7,13 +7,17 @@
     "start": "node index.js",
     "dev": "node index.js"
   },
-  "keywords": ["discord", "bot", "tickets"],
+  "keywords": [
+    "discord",
+    "bot",
+    "tickets"
+  ],
   "author": "overtimehosting",
   "license": "MIT",
   "dependencies": {
     "discord.js": "^14.14.1",
-    "better-sqlite3": "^9.2.2",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "pg": "^8.16.3"
   },
   "engines": {
     "node": ">=16.0.0"
